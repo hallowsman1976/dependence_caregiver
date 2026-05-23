@@ -1686,7 +1686,7 @@ function switchReportTab(tab) {
 }
 
 async function loadDailyReport() {
-  const date = $('#reportDate').value;
+  const date = $('#reportDateISO').value;  // เปลี่ยนจาก reportDate
   const filters = {};
   const cg = $('#reportCgFilterDaily').value;
   if (cg) filters.caregiver_id = cg;
