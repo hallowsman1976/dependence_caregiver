@@ -26,6 +26,9 @@
 
   <!-- Signature Pad -->
   <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+  <!-- Flatpickr -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
 
   <!-- Tailwind Config -->
   <script>
@@ -553,9 +556,10 @@
           <input id="pFullname" class="input-field">
         </div>
         <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="form-label">วันเดือนปีเกิด</label>
-            <input id="pBirthdate" type="date" class="input-field">
+          <div class="relative">
+          <input id="pBirthdate" type="text" class="input-field pr-10" placeholder="วว/ดด/ปปปป (พ.ศ.)" readonly autocomplete="off">
+            <input id="pBirthdateISO" type="hidden">
+            <i data-lucide="calendar" class="w-5 h-5 absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
           </div>
           <div>
             <label class="form-label">เพศ</label>
