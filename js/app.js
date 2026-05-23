@@ -795,7 +795,15 @@ function openPatientModal(p) {
   $('#pRunningNo').value  = p ? (p.running_no||'') : '(สร้างอัตโนมัติ)';
   $('#pCid').value        = p ? p.cid : '';
   $('#pFullname').value   = p ? p.fullname : '';
-  $('#pBirthdate').value  = p ? (p.birthdate||'') : '';
+  // ตั้งค่า birthdate (รูปแบบ ISO ใน hidden)
+  $('#pBirthdateISO').value = p && p.birthdate ? p.birthdate : '';
+  $('#pBirthdate').value = '';
+
+// Init Thai Date Picker
+createThaiDatePicker('#pBirthdate', '#pBirthdateISO', {
+  maxDate: 'today',
+  minDate: '1900-01-01'
+});
   $('#pGender').value     = p ? (p.gender||'') : '';
   $('#pHouseNo').value    = p ? (p.house_no||'') : '';
   $('#pMoo').value        = p ? (p.moo||'') : '';
@@ -842,7 +850,7 @@ async function savePatient() {
   const data = {
     cid: $('#pCid').value.trim(),
     fullname: $('#pFullname').value.trim(),
-    birthdate: $('#pBirthdate').value || null,
+    birthdate: $('#pBirthdateISO').value || null,
     gender: $('#pGender').value || null,
     house_no: $('#pHouseNo').value.trim(),
     moo: $('#pMoo').value.trim(),
@@ -2177,3 +2185,164 @@ window.openCareRecordForm = openCareRecordForm;
 window.removeServiceImage = removeServiceImage;
 window.cancelAssignment = cancelAssignment;
 
+/* =====================================================
+   THAI DATE PICKER (Flatpickr + Buddhist Year)
+   ===================================================== */
+
+/**
+ * สร้าง Thai Date Picker บน input ที่ระบุ
+ * - แสดงปี พ.ศ.
+ * - รูปแบบ dd/mm/yyyy
+ * - เก็บค่า ISO ใน hidden input
+ *
+ * @param {string} selector - CSS selector ของ input ที่จะแสดง (เช่น '#pBirthdate')
+ * @param {string} hiddenSelector - CSS selector ของ hidden input ที่จะเก็บ ISO date
+ * @param {object} options - options เพิ่มเติม
+ */
+function createThaiDatePicker(selector, hiddenSelector, options) {
+  const opts = options || {};
+  const visible = document.querySelector(selector);
+  const hidden = document.querySelector(hiddenSelector);
+  if (!visible || !hidden) return null;
+
+  // ทำลาย instance เก่า (ถ้ามี)
+  if (visible._flatpickr) visible._flatpickr.destroy();
+
+  const fp = flatpickr(visible, {
+    locale: thaiLocale(),
+    dateFormat: 'd/m/Y',       // จะถูก override โดย formatDate ด้านล่าง
+    maxDate: opts.maxDate || 'today',
+    minDate: opts.minDate || '1900-01-01',
+    disableMobile: true,        // บังคับใช้ flatpickr ไม่ใช้ native ของมือถือ
+    allowInput: false,
+
+    // ⭐ Format ตอนแสดงผล: dd/mm/yyyy (พ.ศ.)
+    formatDate: function(date, format) {
+      if (!date) return '';
+      const d = String(date.getDate()).padStart(2, '0');
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const y = date.getFullYear() + 543; // ค.ศ. → พ.ศ.
+      return `${d}/${m}/${y}`;
+    },
+
+    // ⭐ Parse เวลาตั้งค่า defaultDate จาก hidden ISO
+    parseDate: function(dateStr, format) {
+      if (!dateStr) return undefined;
+      // ถ้าเป็น ISO yyyy-mm-dd
+      if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) {
+        return new Date(dateStr);
+      }
+      // ถ้าเป็น dd/mm/yyyy (พ.ศ.)
+      const parts = String(dateStr).split('/');
+      if (parts.length === 3) {
+        const d = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10) - 1;
+        let y = parseInt(parts[2], 10);
+        if (y > 2400) y -= 543; // พ.ศ. → ค.ศ.
+        return new Date(y, m, d);
+      }
+      return undefined;
+    },
+
+    // ⭐ ตอนเลือกวัน → อัปเดต hidden input เป็น ISO
+    onChange: function(selectedDates, dateStr, instance) {
+      if (selectedDates && selectedDates[0]) {
+        const d = selectedDates[0];
+        const iso = d.getFullYear() + '-'
+                  + String(d.getMonth() + 1).padStart(2, '0') + '-'
+                  + String(d.getDate()).padStart(2, '0');
+        hidden.value = iso;
+        if (opts.onChange) opts.onChange(iso, d);
+      } else {
+        hidden.value = '';
+      }
+    },
+
+    // ⭐ ตอนเปิด calendar → render ปี พ.ศ.
+    onReady: function(_, __, instance) {
+      patchYearToThaiBuddhist(instance);
+    },
+    onMonthChange: function(_, __, instance) {
+      patchYearToThaiBuddhist(instance);
+    },
+    onYearChange: function(_, __, instance) {
+      patchYearToThaiBuddhist(instance);
+    },
+    onOpen: function(_, __, instance) {
+      patchYearToThaiBuddhist(instance);
+    }
+  });
+
+  // ตั้งค่าเริ่มต้นจาก hidden (ถ้ามี)
+  if (hidden.value) fp.setDate(hidden.value, true);
+
+  return fp;
+}
+
+/**
+ * Locale ภาษาไทย (เดือน, วัน)
+ */
+function thaiLocale() {
+  return {
+    weekdays: {
+      shorthand: ['อา','จ','อ','พ','พฤ','ศ','ส'],
+      longhand:  ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์']
+    },
+    months: {
+      shorthand: ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'],
+      longhand:  ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม']
+    },
+    firstDayOfWeek: 0,
+    ordinal: () => '',
+    rangeSeparator: ' ถึง ',
+    weekAbbreviation: 'สัปดาห์',
+    scrollTitle: 'เลื่อนเพื่อเปลี่ยน',
+    toggleTitle: 'คลิกเพื่อสลับ',
+    amPM: ['AM','PM']
+  };
+}
+
+/**
+ * แทนที่ปีในตัวเลือกปี (ค.ศ. → พ.ศ.) บน flatpickr calendar
+ */
+function patchYearToThaiBuddhist(instance) {
+  if (!instance || !instance.calendarContainer) return;
+  setTimeout(() => {
+    const yearInput = instance.calendarContainer.querySelector('.numInput.cur-year');
+    if (yearInput) {
+      const ad = parseInt(yearInput.value, 10);
+      if (!isNaN(ad) && ad < 2400) {
+        yearInput.setAttribute('data-ad-year', ad);
+        yearInput.value = ad + 543;
+      }
+      // Hijack การพิมพ์ปี
+      if (!yearInput._thaiPatched) {
+        yearInput._thaiPatched = true;
+        yearInput.addEventListener('input', function() {
+          const be = parseInt(this.value, 10);
+          if (!isNaN(be) && be > 2400) {
+            const ad = be - 543;
+            this.setAttribute('data-ad-year', ad);
+            // ไม่ trigger flatpickr event เพื่อหลีกเลี่ยง infinite loop
+          }
+        });
+        yearInput.addEventListener('blur', function() {
+          const be = parseInt(this.value, 10);
+          if (!isNaN(be) && be > 2400) {
+            const ad = be - 543;
+            instance.changeYear(ad);
+          }
+        });
+        // กดขึ้น/ลง
+        const upBtn = yearInput.parentElement.querySelector('.arrowUp');
+        const downBtn = yearInput.parentElement.querySelector('.arrowDown');
+        if (upBtn) upBtn.addEventListener('click', () => {
+          setTimeout(() => patchYearToThaiBuddhist(instance), 50);
+        });
+        if (downBtn) downBtn.addEventListener('click', () => {
+          setTimeout(() => patchYearToThaiBuddhist(instance), 50);
+        });
+      }
+    }
+  }, 10);
+}
