@@ -1,4 +1,4 @@
-<script>
+
 /* =====================================================
    GLOBAL STATE
    ===================================================== */
@@ -2181,4 +2181,4 @@ window.viewImage = viewImage;
 window.openCareRecordForm = openCareRecordForm;
 window.removeServiceImage = removeServiceImage;
 window.cancelAssignment = cancelAssignment;
-</script>
+
