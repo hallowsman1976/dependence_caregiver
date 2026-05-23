@@ -128,19 +128,21 @@ function debounce(fn, ms) {
 /* =====================================================
     2.SERVER CALL — ผ่าน fetch ไป Apps Script
    ===================================================== */
-
 async function callServer(functionName, ...args) {
   if (!APP_CONFIG.API_URL || APP_CONFIG.API_URL.includes('YOUR-DEPLOYMENT-ID')) {
     throw new Error('ยังไม่ได้ตั้ง API_URL ใน config.js');
   }
 
-  // ⭐ แยก token ออกจาก args (function ส่วนใหญ่รับ token เป็น arg ตัวแรก)
-  const noTokenActions = ['login', 'getSystemSettings'];
+  // ⭐ แยก token ออกจาก args
+  // ฟังก์ชันที่ไม่ต้องใช้ token เป็น arg แรก
+  const NO_TOKEN_ACTIONS = ['login', 'getSystemSettings'];
+
   let token = null;
   let params = args;
 
-  if (!noTokenActions.includes(functionName)) {
-    token = args[0] || (session && session.token);
+  if (!NO_TOKEN_ACTIONS.includes(functionName)) {
+    // มี token เป็น arg แรกใน args
+    token = args[0] || (session && session.token) || null;
     params = args.slice(1);
   }
 
@@ -150,30 +152,43 @@ async function callServer(functionName, ...args) {
     params: params
   };
 
-  if (APP_CONFIG.DEBUG) {
-    console.log('[API] →', functionName, body);
-  }
+  // ⭐ Debug log - เปิดดูใน Console
+  console.log('[API →]', functionName, body);
 
   try {
     const res = await fetch(APP_CONFIG.API_URL, {
       method: 'POST',
-      // ⭐ ใช้ text/plain เพื่อหลบ CORS preflight (Apps Script ไม่ support OPTIONS)
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(body),
       redirect: 'follow'
     });
 
+    // ⭐ ตรวจ Content-Type
+    const contentType = res.headers.get('content-type') || '';
+    const text = await res.text();
+
+    console.log('[API ←] Status:', res.status, 'Type:', contentType);
+    console.log('[API ←] Response (raw):', text.slice(0, 500));
+
     if (!res.ok) {
-      throw new Error('HTTP ' + res.status);
+      throw new Error('HTTP ' + res.status + ': ' + text.slice(0, 200));
     }
 
-    const result = await res.json();
-
-    if (APP_CONFIG.DEBUG) {
-      console.log('[API] ←', functionName, result);
+    // ตรวจว่าเป็น JSON จริง
+    if (!contentType.includes('json') && !text.trim().startsWith('{')) {
+      throw new Error('Server ตอบกลับไม่ใช่ JSON - อาจ Deployment ผิด หรือไม่ใช่ Anyone access');
     }
 
-    // ตรวจ session หมดอายุ
+    let result;
+    try {
+      result = JSON.parse(text);
+    } catch (e) {
+      throw new Error('Parse JSON ไม่ได้: ' + text.slice(0, 100));
+    }
+
+    console.log('[API ←]', functionName, result);
+
+    // Session หมดอายุ?
     if (result && result.success === false) {
       const msg = result.message || '';
       if (msg.indexOf('Session หมดอายุ') >= 0 || msg.indexOf('ไม่พบ session') >= 0) {
@@ -185,31 +200,12 @@ async function callServer(functionName, ...args) {
     return result;
 
   } catch (err) {
+    console.error('[API ✗]', functionName, err);
     if (err.name === 'TypeError' && err.message.includes('Failed to fetch')) {
       throw new Error('เชื่อมต่อ API ไม่ได้ - ตรวจสอบ URL หรือเครือข่ายอินเทอร์เน็ต');
     }
     throw err;
   }
-}
-
-function handleSessionExpired(message) {
-  if (handleSessionExpired._handling) return;
-  handleSessionExpired._handling = true;
-
-  sessionStorage.removeItem('care_session');
-  session = null;
-
-  Swal.fire({
-    icon: 'warning',
-    title: 'Session หมดอายุ',
-    text: 'กรุณาเข้าสู่ระบบใหม่',
-    confirmButtonText: 'เข้าสู่ระบบใหม่',
-    confirmButtonColor: '#2563EB',
-    allowOutsideClick: false
-  }).then(() => {
-    resetToLoginPage();
-    handleSessionExpired._handling = false;
-  });
 }
 /* =====================================================
    3. AUTHENTICATION
