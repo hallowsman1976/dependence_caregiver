@@ -1,4 +1,3 @@
-<style>
 /* =====================================================
    1. GLOBAL & BASE
    ===================================================== */
@@ -1142,4 +1141,3 @@ a:focus-visible {
 .status-dot.green  { background: var(--color-success); box-shadow: 0 0 8px rgba(34,197,94,0.5); }
 .status-dot.red    { background: var(--color-danger); }
 .status-dot.gray   { background: #94A3B8; }
-</style>
