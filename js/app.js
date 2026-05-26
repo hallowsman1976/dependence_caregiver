@@ -1454,75 +1454,353 @@ function interpretBMI(bmi) {
   return 'อ้วนระดับ 2';
 }
 
-
 /* =====================================================
    14. MENTAL HEALTH 2Q / 9Q / 8Q
    ===================================================== */
-function handleTwoQChange() {
-  const v = (($$('input[name="cr2q"]').find(r=>r.checked))||{}).value;
-  // Visual selected radio cards
-  $$('label.radio-card').forEach(l => {
-    const inp = l.querySelector('input[name="cr2q"]');
-    l.classList.toggle('is-checked', inp.checked);
-  });
 
-  if (v === 'ปกติ') {
+const Q2_QUESTIONS = [
+  'ใน 2 สัปดาห์ที่ผ่านมา รวมวันนี้ ท่านรู้สึก หดหู่ เศร้า หรือท้อแท้สิ้นหวัง หรือไม่',
+  'ใน 2 สัปดาห์ที่ผ่านมา รวมวันนี้ ท่านรู้สึก เบื่อ ทำอะไรก็ไม่เพลิดเพลิน หรือไม่'
+];
+
+const Q9_QUESTIONS = [
+  'เบื่อ ไม่สนใจอยากทำอะไร',
+  'ไม่สบายใจ ซึมเศร้า ท้อแท้',
+  'หลับยากหรือหลับๆ ตื่นๆ หรือหลับมากไป',
+  'เหนื่อยง่ายหรือไม่ค่อยมีแรง',
+  'เบื่ออาหารหรือกินมากเกินไป',
+  'รู้สึกไม่ดีกับตัวเอง คิดว่าตัวเองล้มเหลวหรือครอบครัวผิดหวัง',
+  'สมาธิไม่ดี เวลาทำอะไร เช่น ดูโทรทัศน์ ฟังวิทยุ หรือทำงานที่ต้องใช้ความตั้งใจ',
+  'พูดช้า ทำอะไรช้าลงจนคนอื่นสังเกตเห็นได้ หรือกระสับกระส่ายไม่สามารถอยู่นิ่งได้เหมือนที่เคยเป็น',
+  'คิดทำร้ายตนเอง หรือคิดว่าถ้าตายไปคงจะดี'
+];
+
+const Q9_OPTIONS = [
+  { val: 0, label: 'ไม่มีเลย' },
+  { val: 1, label: 'บางวัน' },
+  { val: 2, label: 'บ่อย' },
+  { val: 3, label: 'ทุกวัน' }
+];
+
+// 8Q — น้ำหนักคะแนนต่างกันในแต่ละข้อ
+const Q8_QUESTIONS = [
+  { text: 'คิดอยากตาย หรือ คิดว่าตายไปจะดีกว่า', no: 0, yes: 1 },
+  { text: 'อยากทำร้ายตัวเอง หรือ ทำให้ตัวเองบาดเจ็บ', no: 0, yes: 2 },
+  { text: 'คิดเกี่ยวกับการฆ่าตัวตาย', no: 0, yes: 6,
+    note: 'ในช่วง 1 เดือนที่ผ่านมารวมวันนี้' },
+  { text: 'มีแผนการที่จะฆ่าตัวตาย', no: 0, yes: 8 },
+  { text: 'ได้เตรียมการที่จะทำร้ายตนเอง หรือเตรียมการจะฆ่าตัวตายโดยตั้งใจว่าจะให้ตายจริงๆ', no: 0, yes: 9 },
+  { text: 'ได้ทำให้ตนเองบาดเจ็บแต่ไม่ตั้งใจที่จะทำให้เสียชีวิต', no: 0, yes: 4 },
+  { text: 'ได้พยายามฆ่าตัวตายโดยคาดหวัง/ตั้งใจที่จะให้ตาย', no: 0, yes: 10 },
+  { text: 'ตลอดชีวิตที่ผ่านมา ท่านเคยพยายามฆ่าตัวตาย', no: 0, yes: 4 }
+];
+
+/**
+ * Render คำถามทั้งหมด - เรียกครั้งเดียวตอน initApp
+ */
+function renderMentalHealthQuestions() {
+  // ===== 2Q =====
+  const q2List = $('#q2List');
+  if (q2List) {
+    q2List.innerHTML = Q2_QUESTIONS.map((q, i) => `
+      <div class="mh-question" data-q2="${i}">
+        <p class="mh-question-text">
+          <span class="qnum">${i + 1}.</span><span>${escapeHtml(q)}</span>
+        </p>
+        <div class="mh-toggle">
+          <label data-val="0">
+            <input type="radio" name="q2_${i}" value="0">
+            <span>ไม่มี</span>
+          </label>
+          <label data-val="1">
+            <input type="radio" name="q2_${i}" value="1">
+            <span>มี</span>
+          </label>
+        </div>
+      </div>
+    `).join('');
+
+    // Bind events
+    $$('input[name^="q2_"]').forEach(r =>
+      r.addEventListener('change', onQ2Change));
+  }
+
+  // ===== 9Q =====
+  const q9List = $('#q9List');
+  if (q9List) {
+    q9List.innerHTML = Q9_QUESTIONS.map((q, i) => `
+      <div class="mh-question" data-q9="${i}">
+        <p class="mh-question-text">
+          <span class="qnum">${i + 1}.</span><span>${escapeHtml(q)}</span>
+        </p>
+        <div class="mh-toggle-4">
+          ${Q9_OPTIONS.map(opt => `
+            <label data-val="${opt.val}">
+              <input type="radio" name="q9_${i}" value="${opt.val}">
+              <span>${opt.label}</span>
+            </label>
+          `).join('')}
+        </div>
+      </div>
+    `).join('');
+
+    $$('input[name^="q9_"]').forEach(r =>
+      r.addEventListener('change', onQ9Change));
+  }
+
+  // ===== 8Q =====
+  const q8List = $('#q8List');
+  if (q8List) {
+    q8List.innerHTML = Q8_QUESTIONS.map((q, i) => `
+      ${q.note ? `<p class="text-xs text-amber-600 font-medium mt-2 mb-1 px-1">${escapeHtml(q.note)}</p>` : ''}
+      <div class="mh-question" data-q8="${i}">
+        <p class="mh-question-text">
+          <span class="qnum">${i + 1}.</span><span>${escapeHtml(q.text)}</span>
+        </p>
+        <div class="mh-toggle">
+          <label data-val="0">
+            <input type="radio" name="q8_${i}" value="0" data-score="${q.no}">
+            <span>ไม่มี</span>
+          </label>
+          <label data-val="1">
+            <input type="radio" name="q8_${i}" value="1" data-score="${q.yes}">
+            <span>มี (${q.yes})</span>
+          </label>
+        </div>
+      </div>
+    `).join('');
+
+    $$('input[name^="q8_"]').forEach(r =>
+      r.addEventListener('change', onQ8Change));
+  }
+}
+
+/**
+ * เมื่อตอบ 2Q
+ */
+function onQ2Change(e) {
+  const idx = e.target.name.replace('q2_', '');
+  const wrap = $(`[data-q2="${idx}"]`);
+  if (wrap) wrap.classList.add('answered');
+
+  // Visual selection
+  updateToggleVisual(wrap);
+
+  // ตรวจว่าตอบครบทุกข้อหรือยัง
+  const answers = getQ2Answers();
+  if (answers.length === Q2_QUESTIONS.length) {
+    interpret2Q(answers);
+  }
+}
+
+function getQ2Answers() {
+  return Q2_QUESTIONS.map((_, i) => {
+    const r = $(`input[name="q2_${i}"]:checked`);
+    return r ? parseInt(r.value, 10) : null;
+  }).filter(v => v !== null);
+}
+
+function interpret2Q(answers) {
+  // ตอบ "มี" อย่างน้อย 1 ข้อ = เสี่ยง
+  const hasRisk = answers.some(v => v === 1);
+  const resultDiv = $('#q2Result');
+
+  if (hasRisk) {
+    resultDiv.classList.remove('hidden', 'mh-result-normal');
+    resultDiv.classList.add('mh-result-medium');
+    resultDiv.innerHTML = '⚠️ เสี่ยง — แสดงแบบประเมิน 9Q ต่อ';
+    $('#block9Q').classList.remove('hidden');
+    // Scroll ไปยัง 9Q
+    setTimeout(() => $('#block9Q').scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
+  } else {
+    resultDiv.classList.remove('hidden', 'mh-result-medium');
+    resultDiv.classList.add('mh-result-normal');
+    resultDiv.innerHTML = '✅ ปกติ — ไม่มีภาวะซึมเศร้า';
+    // ซ่อน 9Q + 8Q + เคลียร์
     $('#block9Q').classList.add('hidden');
     $('#block8Q').classList.add('hidden');
-    $('#cr9qScore').value = ''; $('#cr9qResult').value = '';
-    $('#cr8qScore').value = ''; $('#cr8qResult').value = '';
-    $('#cr8qBadge').classList.add('hidden');
-  } else if (v === 'เสี่ยง') {
-    $('#block9Q').classList.remove('hidden');
-    toggle8QBy9Q();
+    clearQ9Answers();
+    clearQ8Answers();
   }
+}
+
+/**
+ * เมื่อตอบ 9Q
+ */
+function onQ9Change(e) {
+  const idx = e.target.name.replace('q9_', '');
+  const wrap = $(`[data-q9="${idx}"]`);
+  if (wrap) wrap.classList.add('answered');
+  updateToggleVisual(wrap);
+
+  interpret9Q();
+}
+
+function get9QScore() {
+  let total = 0, answered = 0;
+  Q9_QUESTIONS.forEach((_, i) => {
+    const r = $(`input[name="q9_${i}"]:checked`);
+    if (r) { total += parseInt(r.value, 10); answered++; }
+  });
+  return { total, answered, totalQuestions: Q9_QUESTIONS.length };
 }
 
 function interpret9Q() {
-  const s = parseInt($('#cr9qScore').value, 10);
-  if (isNaN(s)) { $('#cr9qResult').value = ''; return; }
-  let r = '';
-  if (s <= 6)       r = 'ไม่มีอาการซึมเศร้า';
-  else if (s <= 12) r = 'ซึมเศร้าระดับน้อย';
-  else if (s <= 18) r = 'ซึมเศร้าระดับปานกลาง';
-  else              r = 'ซึมเศร้าระดับรุนแรง';
-  $('#cr9qResult').value = r;
-}
+  const { total, answered, totalQuestions } = get9QScore();
 
-function toggle8QBy9Q() {
-  const s = parseInt($('#cr9qScore').value, 10);
-  if (!isNaN(s) && s >= 7) {
+  // อัปเดตคะแนน
+  $('#q9TotalScore').textContent = total;
+
+  // ตอบครบหรือยัง
+  if (answered < totalQuestions) {
+    $('#q9Result').classList.add('hidden');
+    $('#block8Q').classList.add('hidden');
+    clearQ8Answers();
+    return;
+  }
+
+  // แปลผล
+  let level, text, cls;
+  if (total <= 6)       { level = 'normal';  text = 'ไม่มีภาวะซึมเศร้า';            cls = 'mh-result-normal'; }
+  else if (total <= 12) { level = 'mild';    text = 'มีภาวะซึมเศร้าระดับน้อย';      cls = 'mh-result-mild'; }
+  else if (total <= 18) { level = 'medium';  text = 'มีภาวะซึมเศร้าระดับปานกลาง';  cls = 'mh-result-medium'; }
+  else                  { level = 'severe';  text = 'มีภาวะซึมเศร้าระดับรุนแรง';   cls = 'mh-result-severe'; }
+
+  const resultDiv = $('#q9Result');
+  resultDiv.classList.remove('hidden','mh-result-normal','mh-result-mild','mh-result-medium','mh-result-severe');
+  resultDiv.classList.add(cls);
+  $('#q9ResultText').textContent = text;
+
+  // แสดง 8Q ถ้าคะแนน >= 7
+  if (total >= 7) {
     $('#block8Q').classList.remove('hidden');
+    setTimeout(() => $('#block8Q').scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
   } else {
     $('#block8Q').classList.add('hidden');
-    $('#cr8qScore').value = ''; $('#cr8qResult').value = '';
-    $('#cr8qBadge').classList.add('hidden');
+    clearQ8Answers();
   }
 }
 
-function interpret8Q() {
-  const s = parseInt($('#cr8qScore').value, 10);
-  if (isNaN(s)) { $('#cr8qResult').value = ''; $('#cr8qBadge').classList.add('hidden'); return; }
-  let r = '';
-  if (s <= 0)       r = 'ไม่มีความเสี่ยงฆ่าตัวตาย';
-  else if (s < 9)   r = 'เสี่ยงระดับน้อย';
-  else if (s < 17)  r = 'เสี่ยงระดับปานกลาง';
-  else              r = 'เสี่ยงระดับสูง';
-  $('#cr8qResult').value = r;
+/**
+ * เมื่อตอบ 8Q
+ */
+function onQ8Change(e) {
+  const idx = e.target.name.replace('q8_', '');
+  const wrap = $(`[data-q8="${idx}"]`);
+  if (wrap) wrap.classList.add('answered');
+  updateToggleVisual(wrap);
 
+  interpret8Q();
+}
+
+function get8QScore() {
+  let total = 0, answered = 0;
+  Q8_QUESTIONS.forEach((_, i) => {
+    const r = $(`input[name="q8_${i}"]:checked`);
+    if (r) { total += parseInt(r.dataset.score, 10); answered++; }
+  });
+  return { total, answered, totalQuestions: Q8_QUESTIONS.length };
+}
+
+function interpret8Q() {
+  const { total, answered, totalQuestions } = get8QScore();
+
+  $('#q8TotalScore').textContent = total;
+
+  if (answered < totalQuestions) {
+    $('#q8Result').classList.add('hidden');
+    $('#cr8qBadge').classList.add('hidden');
+    return;
+  }
+
+  let level, text, cls;
+  if (total === 0)      { level = 'normal'; text = 'ไม่มีแนวโน้มฆ่าตัวตายในปัจจุบัน';            cls = 'mh-result-normal'; }
+  else if (total <= 8)  { level = 'mild';   text = 'มีแนวโน้มฆ่าตัวตายในปัจจุบันระดับน้อย';     cls = 'mh-result-mild'; }
+  else if (total <= 16) { level = 'medium'; text = 'มีแนวโน้มฆ่าตัวตายในปัจจุบันระดับกลาง';     cls = 'mh-result-medium'; }
+  else                  { level = 'severe'; text = 'มีแนวโน้มฆ่าตัวตายในปัจจุบันระดับรุนแรง'; cls = 'mh-result-severe'; }
+
+  const resultDiv = $('#q8Result');
+  resultDiv.classList.remove('hidden','mh-result-normal','mh-result-mild','mh-result-medium','mh-result-severe');
+  resultDiv.classList.add(cls);
+  $('#q8ResultText').textContent = text;
+
+  // Alert เมื่อคะแนน >= 17 (รุนแรง)
   const badge = $('#cr8qBadge');
-  if (s >= 17) {
+  if (total >= 17) {
     badge.classList.remove('hidden');
     Swal.fire({
-      icon:'warning', title:'⚠ ความเสี่ยงสูง',
-      text:'คะแนน 8Q ≥ 17 — กรุณาประสานบุคลากรสาธารณสุขทันที',
-      confirmButtonColor:'#EF4444'
+      icon: 'warning',
+      title: '⚠️ ความเสี่ยงสูง',
+      html: `<div class="text-left text-sm">
+        <p class="text-red-700 font-medium mb-2">คะแนน 8Q = ${total}</p>
+        <p>${text}</p>
+        <p class="mt-3 text-amber-700">กรุณาประสานบุคลากรสาธารณสุขทันที</p>
+      </div>`,
+      confirmButtonColor: '#EF4444'
     });
   } else {
     badge.classList.add('hidden');
   }
 }
 
+/**
+ * อัปเดต visual ของ toggle (highlight ตัวที่เลือก)
+ */
+function updateToggleVisual(wrap) {
+  if (!wrap) return;
+  $$('label', wrap).forEach(l => {
+    const inp = l.querySelector('input[type="radio"]');
+    l.classList.remove('is-selected', 'no-option', 'yes-option');
+    if (inp && inp.checked) {
+      l.classList.add('is-selected');
+      if (inp.value === '0') l.classList.add('no-option');
+      if (inp.value === '1') l.classList.add('yes-option');
+    }
+  });
+}
+
+function clearQ9Answers() {
+  Q9_QUESTIONS.forEach((_, i) => {
+    $$(`input[name="q9_${i}"]`).forEach(r => r.checked = false);
+    const w = $(`[data-q9="${i}"]`);
+    if (w) {
+      w.classList.remove('answered');
+      $$('label', w).forEach(l => l.classList.remove('is-selected'));
+    }
+  });
+  $('#q9TotalScore').textContent = '0';
+  $('#q9Result').classList.add('hidden');
+}
+
+function clearQ8Answers() {
+  Q8_QUESTIONS.forEach((_, i) => {
+    $$(`input[name="q8_${i}"]`).forEach(r => r.checked = false);
+    const w = $(`[data-q8="${i}"]`);
+    if (w) {
+      w.classList.remove('answered');
+      $$('label', w).forEach(l => l.classList.remove('is-selected'));
+    }
+  });
+  $('#q8TotalScore').textContent = '0';
+  $('#q8Result').classList.add('hidden');
+  $('#cr8qBadge').classList.add('hidden');
+}
+
+function clearAllMentalHealth() {
+  Q2_QUESTIONS.forEach((_, i) => {
+    $$(`input[name="q2_${i}"]`).forEach(r => r.checked = false);
+    const w = $(`[data-q2="${i}"]`);
+    if (w) {
+      w.classList.remove('answered');
+      $$('label', w).forEach(l => l.classList.remove('is-selected'));
+    }
+  });
+  $('#q2Result').classList.add('hidden');
+  $('#block9Q').classList.add('hidden');
+  $('#block8Q').classList.add('hidden');
+  clearQ9Answers();
+  clearQ8Answers();
+}
 
 /* =====================================================
    15. IMAGE UPLOAD & SIGNATURE PAD
