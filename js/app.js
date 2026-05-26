@@ -76,6 +76,7 @@ function initApp() {
   bindLoginEvents();
   bindUIEvents();
   renderActivityCards();
+  renderMentalHealthQuestions();  // ⭐ เพิ่มบรรทัดนี้
   setupReportControls();
 
   // ตรวจ session ใน sessionStorage
@@ -1147,14 +1148,11 @@ async function openCareRecordForm(patientId) {
 
 function resetCareForm() {
   ['crWeight','crHeight','crBmi','crBmiResult','crTemp','crPulse','crResp',
-   'crBpSys','crBpDia','cr9qScore','cr9qResult','cr8qScore','cr8qResult','crNote'
+   'crBpSys','crBpDia','crNote'
   ].forEach(id => { const el = $('#'+id); if (el) el.value = ''; });
   $('#crBpEnabled').checked = false;
   $('#bpFields').classList.add('hidden');
-  $$('input[name="cr2q"]').forEach(r => r.checked = false);
-  $('#block9Q').classList.add('hidden');
-  $('#block8Q').classList.add('hidden');
-  $('#cr8qBadge').classList.add('hidden');
+  clearAllMentalHealth();  // ⭐ เคลียร์ทุกอย่างใน Step 3
   $$('label.activity-card input').forEach(cb => { cb.checked = false; cb.closest('label').classList.remove('is-checked'); });
 
   // Reset images
@@ -1228,19 +1226,34 @@ function validateCareStep(step) {
     }
     return true;
   }
-  if (step === 3) {
-    const v = ($$('input[name="cr2q"]').find(r=>r.checked)||{}).value;
-    if (!v) { showAlert('warning','ยังไม่เลือก 2Q','กรุณาเลือกผลคัดกรอง 2Q'); return false; }
-    if (v === 'เสี่ยง') {
-      const s9 = parseInt($('#cr9qScore').value, 10);
-      if (isNaN(s9) || s9 < 0 || s9 > 27) { focusField('#cr9qScore','กรอกคะแนน 9Q (0-27)'); return false; }
-      if (s9 >= 7) {
-        const s8 = parseInt($('#cr8qScore').value, 10);
-        if (isNaN(s8) || s8 < 0 || s8 > 20) { focusField('#cr8qScore','กรอกคะแนน 8Q (0-20)'); return false; }
-      }
-    }
-    return true;
+if (step === 3) {
+  // ตรวจ 2Q ตอบครบ
+  const q2Answers = getQ2Answers();
+  if (q2Answers.length < Q2_QUESTIONS.length) {
+    showAlert('warning','ยังตอบไม่ครบ','กรุณาตอบ 2Q ให้ครบทุกข้อ');
+    return false;
   }
+
+  const has2QRisk = q2Answers.some(v => v === 1);
+  if (!has2QRisk) return true; // ปกติ - ผ่าน
+
+  // มี 2Q เสี่ยง → ต้องตอบ 9Q ครบ
+  const q9 = get9QScore();
+  if (q9.answered < q9.totalQuestions) {
+    showAlert('warning','ยังตอบไม่ครบ','กรุณาตอบ 9Q ให้ครบทุกข้อ');
+    return false;
+  }
+
+  // ถ้า 9Q >= 7 → ต้องตอบ 8Q ครบ
+  if (q9.total >= 7) {
+    const q8 = get8QScore();
+    if (q8.answered < q8.totalQuestions) {
+      showAlert('warning','ยังตอบไม่ครบ','กรุณาตอบ 8Q ให้ครบทุกข้อ');
+      return false;
+    }
+  }
+  return true;
+}
   if (step === 4 || step === 5 || step === 6) {
     const key = 'step' + step;
     const checked = $$('#'+key+'List input[type="checkbox"]:checked');
@@ -1292,14 +1305,47 @@ function saveStepData(step) {
     careRecordDraft.bp_systolic = careRecordDraft.bp_enabled ? (parseInt($('#crBpSys').value,10)||null) : null;
     careRecordDraft.bp_diastolic = careRecordDraft.bp_enabled ? (parseInt($('#crBpDia').value,10)||null) : null;
   } else if (step === 3) {
-    careRecordDraft.twoq_result = (($$('input[name="cr2q"]').find(r=>r.checked))||{}).value || null;
-    careRecordDraft.nineq_score = parseInt($('#cr9qScore').value,10);
-    if (isNaN(careRecordDraft.nineq_score)) careRecordDraft.nineq_score = null;
-    careRecordDraft.nineq_result = $('#cr9qResult').value || null;
-    careRecordDraft.eightq_score = parseInt($('#cr8qScore').value,10);
-    if (isNaN(careRecordDraft.eightq_score)) careRecordDraft.eightq_score = null;
-    careRecordDraft.eightq_result = $('#cr8qResult').value || null;
-  } else if (step === 4) {
+  // 2Q
+  const q2Answers = getQ2Answers();
+  const has2QRisk = q2Answers.some(v => v === 1);
+  careRecordDraft.twoq_answers = q2Answers;
+  careRecordDraft.twoq_result = has2QRisk ? 'เสี่ยง' : 'ปกติ';
+
+  // 9Q
+  if (has2QRisk) {
+    const q9 = get9QScore();
+    const q9Answers = Q9_QUESTIONS.map((_, i) => {
+      const r = $(`input[name="q9_${i}"]:checked`);
+      return r ? parseInt(r.value, 10) : null;
+    });
+    careRecordDraft.nineq_answers = q9Answers;
+    careRecordDraft.nineq_score = q9.total;
+    careRecordDraft.nineq_result = $('#q9ResultText').textContent || null;
+
+    // 8Q (ถ้า 9Q >= 7)
+    if (q9.total >= 7) {
+      const q8 = get8QScore();
+      const q8Answers = Q8_QUESTIONS.map((_, i) => {
+        const r = $(`input[name="q8_${i}"]:checked`);
+        return r ? parseInt(r.value, 10) : null;
+      });
+      careRecordDraft.eightq_answers = q8Answers;
+      careRecordDraft.eightq_score = q8.total;
+      careRecordDraft.eightq_result = $('#q8ResultText').textContent || null;
+    } else {
+      careRecordDraft.eightq_answers = null;
+      careRecordDraft.eightq_score = null;
+      careRecordDraft.eightq_result = null;
+    }
+  } else {
+    careRecordDraft.nineq_answers = null;
+    careRecordDraft.nineq_score = null;
+    careRecordDraft.nineq_result = null;
+    careRecordDraft.eightq_answers = null;
+    careRecordDraft.eightq_score = null;
+    careRecordDraft.eightq_result = null;
+  }
+} else if (step === 4) {
     careRecordDraft.daily_living_activities = collectActivities('step4');
   } else if (step === 5) {
     careRecordDraft.basic_health_activities = collectActivities('step5');
