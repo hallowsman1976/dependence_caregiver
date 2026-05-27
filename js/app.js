@@ -1,7 +1,12 @@
 /* =====================================================
+   ระบบดูแลผู้มีภาวะพึ่งพิง - Frontend Application
+   Version: 1.0.0
+   ===================================================== */
+
+/* =====================================================
    GLOBAL STATE
    ===================================================== */
-let session = null;            // { token, user }
+let session = null;
 let currentPage = 'dashboard';
 let cacheCaregivers = [];
 let cachePatients = [];
@@ -15,9 +20,9 @@ let selectedPatient = null;
 let signaturePad = null;
 let isSubmittingCare = false;
 
-// Image uploads (base64 cache)
+// Image uploads
 let olderImageBase64 = null;
-let serviceImagesBase64 = [];   // [{base64, name}]
+let serviceImagesBase64 = [];
 let patientPhotoBase64 = null;
 
 const STEP_NAMES = [
@@ -66,6 +71,43 @@ const ACTIVITY_LIST = {
 
 const NO_ACTIVITY_TEXT = 'ไม่ได้ดำเนินกิจกรรมในหมวดนี้';
 
+// Mental Health Questions
+const Q2_QUESTIONS = [
+  'ใน 2 สัปดาห์ที่ผ่านมา รวมวันนี้ ท่านรู้สึก หดหู่ เศร้า หรือท้อแท้สิ้นหวัง หรือไม่',
+  'ใน 2 สัปดาห์ที่ผ่านมา รวมวันนี้ ท่านรู้สึก เบื่อ ทำอะไรก็ไม่เพลิดเพลิน หรือไม่'
+];
+
+const Q9_QUESTIONS = [
+  'เบื่อ ไม่สนใจอยากทำอะไร',
+  'ไม่สบายใจ ซึมเศร้า ท้อแท้',
+  'หลับยากหรือหลับๆ ตื่นๆ หรือหลับมากไป',
+  'เหนื่อยง่ายหรือไม่ค่อยมีแรง',
+  'เบื่ออาหารหรือกินมากเกินไป',
+  'รู้สึกไม่ดีกับตัวเอง คิดว่าตัวเองล้มเหลวหรือครอบครัวผิดหวัง',
+  'สมาธิไม่ดี เวลาทำอะไร เช่น ดูโทรทัศน์ ฟังวิทยุ หรือทำงานที่ต้องใช้ความตั้งใจ',
+  'พูดช้า ทำอะไรช้าลงจนคนอื่นสังเกตเห็นได้ หรือกระสับกระส่ายไม่สามารถอยู่นิ่งได้เหมือนที่เคยเป็น',
+  'คิดทำร้ายตนเอง หรือคิดว่าถ้าตายไปคงจะดี'
+];
+
+const Q9_OPTIONS = [
+  { val: 0, label: 'ไม่มีเลย' },
+  { val: 1, label: 'บางวัน' },
+  { val: 2, label: 'บ่อย' },
+  { val: 3, label: 'ทุกวัน' }
+];
+
+const Q8_QUESTIONS = [
+  { text: 'คิดอยากตาย หรือ คิดว่าตายไปจะดีกว่า', no: 0, yes: 1 },
+  { text: 'อยากทำร้ายตัวเอง หรือ ทำให้ตัวเองบาดเจ็บ', no: 0, yes: 2 },
+  { text: 'คิดเกี่ยวกับการฆ่าตัวตาย', no: 0, yes: 6,
+    note: 'ในช่วง 1 เดือนที่ผ่านมารวมวันนี้' },
+  { text: 'มีแผนการที่จะฆ่าตัวตาย', no: 0, yes: 8 },
+  { text: 'ได้เตรียมการที่จะทำร้ายตนเอง หรือเตรียมการจะฆ่าตัวตายโดยตั้งใจว่าจะให้ตายจริงๆ', no: 0, yes: 9 },
+  { text: 'ได้ทำให้ตนเองบาดเจ็บแต่ไม่ตั้งใจที่จะทำให้เสียชีวิต', no: 0, yes: 4 },
+  { text: 'ได้พยายามฆ่าตัวตายโดยคาดหวัง/ตั้งใจที่จะให้ตาย', no: 0, yes: 10 },
+  { text: 'ตลอดชีวิตที่ผ่านมา ท่านเคยพยายามฆ่าตัวตาย', no: 0, yes: 4 }
+];
+
 
 /* =====================================================
    1. APP INIT & UI HELPERS
@@ -76,10 +118,9 @@ function initApp() {
   bindLoginEvents();
   bindUIEvents();
   renderActivityCards();
-  renderMentalHealthQuestions();  // ⭐ เพิ่มบรรทัดนี้
+  renderMentalHealthQuestions();
   setupReportControls();
 
-  // ตรวจ session ใน sessionStorage
   const saved = sessionStorage.getItem('care_session');
   if (saved) {
     try {
@@ -126,23 +167,21 @@ function debounce(fn, ms) {
   };
 }
 
+
 /* =====================================================
-    2.SERVER CALL — ผ่าน fetch ไป Apps Script
+   2. SERVER CALL — ผ่าน fetch ไป Apps Script
    ===================================================== */
 async function callServer(functionName, ...args) {
   if (!APP_CONFIG.API_URL || APP_CONFIG.API_URL.includes('YOUR-DEPLOYMENT-ID')) {
     throw new Error('ยังไม่ได้ตั้ง API_URL ใน config.js');
   }
 
-  // ⭐ แยก token ออกจาก args
-  // ฟังก์ชันที่ไม่ต้องใช้ token เป็น arg แรก
   const NO_TOKEN_ACTIONS = ['login', 'getSystemSettings'];
 
   let token = null;
   let params = args;
 
   if (!NO_TOKEN_ACTIONS.includes(functionName)) {
-    // มี token เป็น arg แรกใน args
     token = args[0] || (session && session.token) || null;
     params = args.slice(1);
   }
@@ -153,8 +192,7 @@ async function callServer(functionName, ...args) {
     params: params
   };
 
-  // ⭐ Debug log - เปิดดูใน Console
-  console.log('[API →]', functionName, body);
+  if (APP_CONFIG.DEBUG) console.log('[API →]', functionName, body);
 
   try {
     const res = await fetch(APP_CONFIG.API_URL, {
@@ -164,32 +202,22 @@ async function callServer(functionName, ...args) {
       redirect: 'follow'
     });
 
-    // ⭐ ตรวจ Content-Type
-    const contentType = res.headers.get('content-type') || '';
     const text = await res.text();
 
-    console.log('[API ←] Status:', res.status, 'Type:', contentType);
-    console.log('[API ←] Response (raw):', text.slice(0, 500));
+    if (APP_CONFIG.DEBUG) console.log('[API ←] Status:', res.status, 'Type:', res.headers.get('content-type'));
 
-    if (!res.ok) {
-      throw new Error('HTTP ' + res.status + ': ' + text.slice(0, 200));
-    }
+    if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + text.slice(0, 200));
 
-    // ตรวจว่าเป็น JSON จริง
-    if (!contentType.includes('json') && !text.trim().startsWith('{')) {
+    if (!text.trim().startsWith('{') && !text.trim().startsWith('[')) {
       throw new Error('Server ตอบกลับไม่ใช่ JSON - อาจ Deployment ผิด หรือไม่ใช่ Anyone access');
     }
 
     let result;
-    try {
-      result = JSON.parse(text);
-    } catch (e) {
-      throw new Error('Parse JSON ไม่ได้: ' + text.slice(0, 100));
-    }
+    try { result = JSON.parse(text); }
+    catch (e) { throw new Error('Parse JSON ไม่ได้: ' + text.slice(0, 100)); }
 
-    console.log('[API ←]', functionName, result);
+    if (APP_CONFIG.DEBUG) console.log('[API ←]', functionName, result);
 
-    // Session หมดอายุ?
     if (result && result.success === false) {
       const msg = result.message || '';
       if (msg.indexOf('Session หมดอายุ') >= 0 || msg.indexOf('ไม่พบ session') >= 0) {
@@ -208,6 +236,28 @@ async function callServer(functionName, ...args) {
     throw err;
   }
 }
+
+function handleSessionExpired(message) {
+  if (handleSessionExpired._handling) return;
+  handleSessionExpired._handling = true;
+
+  sessionStorage.removeItem('care_session');
+  session = null;
+
+  Swal.fire({
+    icon: 'warning',
+    title: 'Session หมดอายุ',
+    text: 'กรุณาเข้าสู่ระบบใหม่',
+    confirmButtonText: 'เข้าสู่ระบบใหม่',
+    confirmButtonColor: '#2563EB',
+    allowOutsideClick: false
+  }).then(() => {
+    resetToLoginPage();
+    handleSessionExpired._handling = false;
+  });
+}
+
+
 /* =====================================================
    3. AUTHENTICATION
    ===================================================== */
@@ -234,7 +284,6 @@ async function login() {
     session = res.data;
     sessionStorage.setItem('care_session', JSON.stringify(session));
 
-    // ⭐ ตรวจ Bootstrap Mode
     if (session.bootstrap) {
       hideLoading();
       await Swal.fire({
@@ -255,7 +304,6 @@ async function login() {
       });
       enterApp();
       showPage('settings');
-      // เปิดแท็บ Config อัตโนมัติ
       setTimeout(() => switchSettingsTab('config'), 300);
     } else {
       showToast('success', 'เข้าสู่ระบบสำเร็จ');
@@ -280,81 +328,51 @@ async function logout() {
 
   showLoading('กำลังออกจากระบบ...');
   try {
-    if (session && session.token) {
-      await callServer('logout', session.token);
-    }
-  } catch (e) {
-    console.warn('Logout API error (ignored):', e);
-  }
+    if (session && session.token) await callServer('logout', session.token);
+  } catch (e) { console.warn('Logout error (ignored):', e); }
 
-  // เคลียร์ session storage
   sessionStorage.removeItem('care_session');
   session = null;
+  cacheCaregivers = []; cachePatients = []; cacheAssigned = [];
+  selectedPatient = null; careRecordDraft = {};
 
-  // เคลียร์ cache ทั้งหมด
-  cacheCaregivers = [];
-  cachePatients = [];
-  cacheAssigned = [];
-  selectedPatient = null;
-  careRecordDraft = {};
-
-  // ⭐ Reset UI กลับไปหน้า Login (ไม่ใช้ reload เพื่อหลบปัญหา iframe)
   resetToLoginPage();
-
   hideLoading();
   showToast('success', 'ออกจากระบบแล้ว');
 }
 
-/**
- * Reset UI กลับไปหน้า Login โดยไม่ reload หน้า
- */
 function resetToLoginPage() {
-  // ซ่อน app shell
   $('#appShell').classList.add('hidden');
-
-  // เคลียร์ form login
   $('#loginUsername').value = '';
   $('#loginPassword').value = '';
   $('#loginPassword').type = 'password';
 
-  // ปิด modal ทั้งหมด
   ['caregiverModal','patientModal','assignmentModal','historyModal','careRecordModal','imageViewer'].forEach(id => {
     const el = $('#' + id);
     if (el) el.classList.add('hidden');
   });
   document.body.style.overflow = '';
 
-  // ปิด sidebar mobile
   $('#sidebar').classList.add('-translate-x-full');
   $('#sidebarBackdrop').classList.add('hidden');
 
-  // เคลียร์ menu/dashboard
   $('#menuList').innerHTML = '';
   $('#bottomNavList').innerHTML = '';
   $('#dashboardCards').innerHTML = '';
 
-  // เคลียร์ list ต่างๆ
   ['caregiverList','patientList','assignmentList','myPatientList','reportTbody'].forEach(id => {
     const el = $('#' + id);
     if (el) el.innerHTML = '';
   });
 
-  // Reset header
   $('#topUserName').textContent = '-';
   $('#sideUserName').textContent = '-';
   $('#sideUserRole').textContent = '-';
   $('#pageTitle').textContent = 'หน้าหลัก';
 
-  // แสดงหน้า Login
   $('#loginPage').classList.remove('hidden');
-
-  // Scroll กลับขึ้นบน
   window.scrollTo(0, 0);
-
-  // Re-render icons
   if (window.lucide) lucide.createIcons();
-
-  // Focus ที่ช่อง username
   setTimeout(() => $('#loginUsername').focus(), 100);
 }
 
@@ -403,7 +421,6 @@ function buildMenuByRole(role) {
     li.querySelector('a').addEventListener('click', () => showPage(m.key));
     ul.appendChild(li);
   });
-  // Logout เพิ่มท้ายเมนู
   const logoutLi = document.createElement('li');
   logoutLi.className = 'mt-4 pt-3 border-t border-slate-100';
   logoutLi.innerHTML = `<a class="menu-item text-red-600 hover:!bg-red-50">
@@ -411,7 +428,6 @@ function buildMenuByRole(role) {
   logoutLi.querySelector('a').addEventListener('click', logout);
   ul.appendChild(logoutLi);
 
-  // Bottom Nav
   const bn = $('#bottomNavList'); bn.innerHTML = '';
   const bottomKeys = role === 'admin' ? ADMIN_BOTTOM : MEMBER_BOTTOM;
   const map = {};
@@ -425,7 +441,6 @@ function buildMenuByRole(role) {
     li.querySelector('a').addEventListener('click', () => showPage(m.key));
     bn.appendChild(li);
   });
-  // เพิ่ม "เพิ่มเติม" สำหรับ admin (เปิด sidebar)
   if (role === 'admin') {
     const li = document.createElement('li');
     li.innerHTML = `<a class="bottom-nav-item">
@@ -441,13 +456,11 @@ function showPage(key) {
   const page = $(`[data-page="${key}"].page`);
   if (page) page.classList.remove('hidden');
 
-  // Active state
   $$('.menu-item[data-page]').forEach(el =>
     el.classList.toggle('menu-active', el.dataset.page === key));
   $$('.bottom-nav-item[data-page]').forEach(el =>
     el.classList.toggle('bn-active', el.dataset.page === key));
 
-  // Page Title
   const titleMap = {
     dashboard:'แดชบอร์ด', caregivers:'ผู้ดูแล (Care Giver)', patients:'ผู้มีภาวะพึ่งพิง',
     assignments:'มอบหมายการดูแล', reports:'รายงาน', settings:'ตั้งค่าระบบ',
@@ -455,10 +468,8 @@ function showPage(key) {
   };
   $('#pageTitle').textContent = titleMap[key] || '-';
 
-  // ปิด sidebar mobile
   toggleSidebar(false);
 
-  // โหลดข้อมูลตามหน้า
   if (key === 'dashboard') loadDashboardSummary();
   else if (key === 'caregivers') loadCaregivers();
   else if (key === 'patients') loadPatients();
@@ -482,73 +493,54 @@ function toggleSidebar(force) {
    5. UI EVENT BINDING
    ===================================================== */
 function bindUIEvents() {
-  // Sidebar toggle
   $('#sidebarToggle').addEventListener('click', () => toggleSidebar());
   $('#sidebarClose').addEventListener('click', () => toggleSidebar(false));
   $('#sidebarBackdrop').addEventListener('click', () => toggleSidebar(false));
   $('#topLogoutBtn').addEventListener('click', logout);
 
-  // Modal close buttons
   $$('[data-close]').forEach(b => {
     b.addEventListener('click', () => closeModal(b.dataset.close));
   });
   $$('.modal-backdrop').forEach(b => {
     b.addEventListener('click', () => {
       const root = b.closest('.modal-root');
-      // ห้ามปิด care record modal ด้วยการคลิก backdrop
       if (root && root.id !== 'careRecordModal') closeModal(root.id);
     });
   });
 
-  // Caregiver
   $('#btnAddCaregiver').addEventListener('click', () => openCaregiverModal());
   $('#btnSaveCaregiver').addEventListener('click', saveCaregiver);
   $('#searchCaregiver').addEventListener('input', debounce(renderCaregiverList, 250));
 
-  // Patient
   $('#btnAddPatient').addEventListener('click', () => openPatientModal());
   $('#btnSavePatient').addEventListener('click', savePatient);
   $('#searchPatient').addEventListener('input', debounce(renderPatientList, 250));
   $('#pPhotoInput').addEventListener('change', handlePatientPhotoChange);
 
-  // Assignment
   $('#btnAddAssignment').addEventListener('click', openAssignModal);
   $('#btnSaveAssignment').addEventListener('click', saveAssignment);
 
-  // My Patient search (member)
   $('#searchMyPatient').addEventListener('input', debounce(renderAssignedPatientCards, 250));
 
-  // Settings
-  $('#btnSaveSettings').addEventListener('click', saveSettings);
+  if ($('#btnSaveSettings')) $('#btnSaveSettings').addEventListener('click', saveSettings);
 
-  // Multi-step
   $('#nextStepBtn').addEventListener('click', nextCareStep);
   $('#prevStepBtn').addEventListener('click', prevCareStep);
   $('#submitCareRecordBtn').addEventListener('click', submitCareRecord);
 
-  // Step 1 BMI
   $('#crWeight').addEventListener('input', calculateBMI);
   $('#crHeight').addEventListener('input', calculateBMI);
 
-  // Step 2 BP toggle
   $('#crBpEnabled').addEventListener('change', (e) => {
     $('#bpFields').classList.toggle('hidden', !e.target.checked);
   });
 
-  // Step 3 mental
-  $$('input[name="cr2q"]').forEach(r => r.addEventListener('change', handleTwoQChange));
-  $('#cr9qScore').addEventListener('input', () => { interpret9Q(); toggle8QBy9Q(); });
-  $('#cr8qScore').addEventListener('input', interpret8Q);
-
-  // Step 7 images
   $('#olderFile').addEventListener('change', handleOlderImagePreview);
   $('#serviceFiles').addEventListener('change', handleServiceImagesPreview);
   $('#btnClearSig').addEventListener('click', clearSignature);
 
-  // Image viewer
   $('#closeViewer').addEventListener('click', () => $('#imageViewer').classList.add('hidden'));
 
-  // Report tabs
   $$('.report-tab').forEach(b => b.addEventListener('click', () => switchReportTab(b.dataset.rtab)));
   $('#btnLoadDaily').addEventListener('click', loadDailyReport);
   $('#btnLoadMonthly').addEventListener('click', loadMonthlyReport);
@@ -796,20 +788,20 @@ function openPatientModal(p) {
   $('#pRunningNo').value  = p ? (p.running_no||'') : '(สร้างอัตโนมัติ)';
   $('#pCid').value        = p ? p.cid : '';
   $('#pFullname').value   = p ? p.fullname : '';
-  // ตั้งค่า birthdate (รูปแบบ ISO ใน hidden)
-  $('#pBirthdateISO').value = p && p.birthdate ? p.birthdate : '';
-  $('#pBirthdate').value = '';
-
-// Init Thai Date Picker
-createThaiDatePicker('#pBirthdate', '#pBirthdateISO', {
-  maxDate: 'today',
-  minDate: '1900-01-01'
-});
   $('#pGender').value     = p ? (p.gender||'') : '';
   $('#pHouseNo').value    = p ? (p.house_no||'') : '';
   $('#pMoo').value        = p ? (p.moo||'') : '';
   $('#pUd').value         = p ? (p.ud||'') : '';
   $('#pPhone').value      = p ? (p.phone||'') : '';
+
+  // Birthdate (Thai Date Picker)
+  $('#pBirthdateISO').value = p && p.birthdate ? p.birthdate : '';
+  $('#pBirthdate').value = '';
+  setTimeout(() => {
+    createThaiDatePicker('#pBirthdate', '#pBirthdateISO', {
+      maxDate: 'today', minDate: '1900-01-01'
+    });
+  }, 100);
 
   // Caregiver dropdown
   const sel = $('#pCaregiverId');
@@ -818,7 +810,6 @@ createThaiDatePicker('#pBirthdate', '#pBirthdateISO', {
       `<option value="${c.id}" ${p && p.caregiver_id===c.id?'selected':''}>${escapeHtml(c.cg_code)} - ${escapeHtml(c.fullname)}</option>`
     ).join('');
 
-  // Photo preview
   patientPhotoBase64 = null;
   $('#pPhotoInput').value = '';
   const img = $('#pPhotoPreview'), ph = $('#pPhotoPlaceholder');
@@ -1050,7 +1041,7 @@ async function viewPatientHistory(patientId, name) {
             <div>หายใจ: <b>${r.respiration||'-'}</b></div>
             ${r.bp_enabled ? `<div class="col-span-2">BP: <b>${r.bp_systolic}/${r.bp_diastolic}</b> mmHg</div>` : ''}
             <div>2Q: <b>${escapeHtml(r.twoq_result||'-')}</b></div>
-            <div>9Q/8Q: <b>${r.nineq_score||'-'}/${r.eightq_score||'-'}</b></div>
+            <div>9Q/8Q: <b>${r.nineq_score??'-'}/${r.eightq_score??'-'}</b></div>
           </div>
           ${r.note ? `<p class="text-xs text-slate-500 mt-2 pt-2 border-t border-slate-100">${escapeHtml(r.note)}</p>` : ''}
         </div>`).join('');
@@ -1063,8 +1054,6 @@ async function viewPatientHistory(patientId, name) {
 /* =====================================================
    12. CARE RECORD MULTI-STEP — ENGINE
    ===================================================== */
-
-/* 12.1 Render Activity Cards (Step 4-6) */
 function renderActivityCards() {
   ['step4','step5','step6'].forEach(key => {
     const wrap = $('#'+key+'List');
@@ -1075,13 +1064,10 @@ function renderActivityCards() {
         <span class="ac-check"></span>
         <span class="ac-text">${escapeHtml(txt)}</span>
       </label>`).join('');
-    // bind change
     $$('label.activity-card', wrap).forEach(el => {
       el.addEventListener('click', (e) => {
-        // ถ้าเลือก "ไม่ได้ดำเนินกิจกรรม" ให้เคลียร์อย่างอื่น (และกลับกัน)
         const cb = el.querySelector('input[type="checkbox"]');
         const isNoAct = cb.value === NO_ACTIVITY_TEXT;
-        // ใช้ setTimeout ให้ checkbox toggle เสร็จก่อน
         setTimeout(() => {
           el.classList.toggle('is-checked', cb.checked);
           if (cb.checked) {
@@ -1098,9 +1084,7 @@ function renderActivityCards() {
   });
 }
 
-/* 12.2 openCareRecordForm */
 async function openCareRecordForm(patientId) {
-  // หา patient จาก cache
   selectedPatient = cacheAssigned.find(p => p.id === patientId)
                   || cachePatients.find(p => p.id === patientId);
   if (!selectedPatient) {
@@ -1114,22 +1098,18 @@ async function openCareRecordForm(patientId) {
   }
   if (!selectedPatient) return showAlert('warning','ไม่พบข้อมูล','ไม่พบข้อมูลผู้ป่วยรายนี้');
 
-  // Reset state
   currentCareStep = 1;
   careRecordDraft = {};
   olderImageBase64 = null;
   serviceImagesBase64 = [];
   isSubmittingCare = false;
 
-  // Reset form
   resetCareForm();
 
-  // Header
   $('#careHeaderPatient').textContent = selectedPatient.fullname;
   $('#selectedPatientId').value = selectedPatient.id;
   $('#selectedCaregiverId').value = session.user.caregiverId || '';
 
-  // Step 1 patient info
   $('#step1Photo').src = selectedPatient.photo_url || generateAvatarDataURI(selectedPatient.fullname);
   $('#step1Fullname').textContent = selectedPatient.fullname || '-';
   $('#step1Age').textContent = (calculateAge(selectedPatient.birthdate) || '-') + ' ปี';
@@ -1138,11 +1118,13 @@ async function openCareRecordForm(patientId) {
   $('#step1Moo').textContent = selectedPatient.moo || '-';
   $('#step1Caregiver').textContent = (selectedPatient.caregiver && selectedPatient.caregiver.fullname)
     || session.user.displayName || '-';
+
+  // ⭐ Render mental health questions ทุกครั้งที่เปิด modal (lazy + safe)
   renderMentalHealthQuestions();
+
   openModal('careRecordModal');
   showCareStep(1);
 
-  // Init signature pad after modal visible
   setTimeout(initSignaturePad, 200);
 }
 
@@ -1152,10 +1134,11 @@ function resetCareForm() {
   ].forEach(id => { const el = $('#'+id); if (el) el.value = ''; });
   $('#crBpEnabled').checked = false;
   $('#bpFields').classList.add('hidden');
-  clearAllMentalHealth();  // ⭐ เคลียร์ทุกอย่างใน Step 3
+
+  clearAllMentalHealth();
+
   $$('label.activity-card input').forEach(cb => { cb.checked = false; cb.closest('label').classList.remove('is-checked'); });
 
-  // Reset images
   $('#olderFile').value = '';
   $('#olderPreview').src = ''; $('#olderPreview').classList.add('hidden');
   $('#olderPlaceholder').classList.remove('hidden');
@@ -1166,7 +1149,6 @@ function resetCareForm() {
   if (signaturePad) signaturePad.clear();
 }
 
-/* 12.3 showCareStep */
 function showCareStep(step) {
   currentCareStep = step;
   $('#currentStep').value = step;
@@ -1175,36 +1157,29 @@ function showCareStep(step) {
   });
   updateCareProgress();
 
-  // Update buttons
   $('#prevStepBtn').classList.toggle('hidden', step === 1);
   $('#nextStepBtn').classList.toggle('hidden', step === totalCareSteps);
   $('#submitCareRecordBtn').classList.toggle('hidden', step !== totalCareSteps);
 
-  // ถ้าเข้า Step 8 → render review
   if (step === totalCareSteps) renderCareReview();
 
-  // Scroll modal body to top
   const body = $('#careRecordModal .modal-body');
   if (body) body.scrollTop = 0;
 
   if (window.lucide) lucide.createIcons();
 }
 
-/* 12.4 nextCareStep */
 function nextCareStep() {
   if (!validateCareStep(currentCareStep)) return;
   saveStepData(currentCareStep);
   if (currentCareStep < totalCareSteps) showCareStep(currentCareStep + 1);
 }
 
-/* 12.5 prevCareStep */
 function prevCareStep() {
-  // เก็บข้อมูลปัจจุบันก่อนถอยกลับ (ไม่ validate)
   saveStepData(currentCareStep);
   if (currentCareStep > 1) showCareStep(currentCareStep - 1);
 }
 
-/* 12.6 validateCareStep */
 function validateCareStep(step) {
   if (step === 1) {
     const w = parseFloat($('#crWeight').value), h = parseFloat($('#crHeight').value);
@@ -1226,34 +1201,29 @@ function validateCareStep(step) {
     }
     return true;
   }
-if (step === 3) {
-  // ตรวจ 2Q ตอบครบ
-  const q2Answers = getQ2Answers();
-  if (q2Answers.length < Q2_QUESTIONS.length) {
-    showAlert('warning','ยังตอบไม่ครบ','กรุณาตอบ 2Q ให้ครบทุกข้อ');
-    return false;
-  }
-
-  const has2QRisk = q2Answers.some(v => v === 1);
-  if (!has2QRisk) return true; // ปกติ - ผ่าน
-
-  // มี 2Q เสี่ยง → ต้องตอบ 9Q ครบ
-  const q9 = get9QScore();
-  if (q9.answered < q9.totalQuestions) {
-    showAlert('warning','ยังตอบไม่ครบ','กรุณาตอบ 9Q ให้ครบทุกข้อ');
-    return false;
-  }
-
-  // ถ้า 9Q >= 7 → ต้องตอบ 8Q ครบ
-  if (q9.total >= 7) {
-    const q8 = get8QScore();
-    if (q8.answered < q8.totalQuestions) {
-      showAlert('warning','ยังตอบไม่ครบ','กรุณาตอบ 8Q ให้ครบทุกข้อ');
+  if (step === 3) {
+    const q2Answers = getQ2Answers();
+    if (q2Answers.length < Q2_QUESTIONS.length) {
+      showAlert('warning','ยังตอบไม่ครบ','กรุณาตอบ 2Q ให้ครบทุกข้อ');
       return false;
     }
+    const has2QRisk = q2Answers.some(v => v === 1);
+    if (!has2QRisk) return true;
+
+    const q9 = get9QScore();
+    if (q9.answered < q9.totalQuestions) {
+      showAlert('warning','ยังตอบไม่ครบ','กรุณาตอบ 9Q ให้ครบทุกข้อ');
+      return false;
+    }
+    if (q9.total >= 7) {
+      const q8 = get8QScore();
+      if (q8.answered < q8.totalQuestions) {
+        showAlert('warning','ยังตอบไม่ครบ','กรุณาตอบ 8Q ให้ครบทุกข้อ');
+        return false;
+      }
+    }
+    return true;
   }
-  return true;
-}
   if (step === 4 || step === 5 || step === 6) {
     const key = 'step' + step;
     const checked = $$('#'+key+'List input[type="checkbox"]:checked');
@@ -1275,7 +1245,6 @@ if (step === 3) {
     return true;
   }
   if (step === 8) {
-    // ตรวจสอบ step 1-7 อีกครั้ง
     for (let i = 1; i <= 7; i++) {
       const ok = validateCareStep(i);
       if (!ok) { showCareStep(i); return false; }
@@ -1290,7 +1259,6 @@ function focusField(sel, msg) {
   const el = $(sel); if (el) { el.focus(); el.classList.add('!border-red-400'); setTimeout(()=>el.classList.remove('!border-red-400'), 2000); }
 }
 
-/* 12.7 saveStepData */
 function saveStepData(step) {
   if (step === 1) {
     careRecordDraft.weight = parseFloat($('#crWeight').value) || null;
@@ -1305,47 +1273,44 @@ function saveStepData(step) {
     careRecordDraft.bp_systolic = careRecordDraft.bp_enabled ? (parseInt($('#crBpSys').value,10)||null) : null;
     careRecordDraft.bp_diastolic = careRecordDraft.bp_enabled ? (parseInt($('#crBpDia').value,10)||null) : null;
   } else if (step === 3) {
-  // 2Q
-  const q2Answers = getQ2Answers();
-  const has2QRisk = q2Answers.some(v => v === 1);
-  careRecordDraft.twoq_answers = q2Answers;
-  careRecordDraft.twoq_result = has2QRisk ? 'เสี่ยง' : 'ปกติ';
+    const q2Answers = getQ2Answers();
+    const has2QRisk = q2Answers.some(v => v === 1);
+    careRecordDraft.twoq_answers = q2Answers;
+    careRecordDraft.twoq_result = has2QRisk ? 'เสี่ยง' : 'ปกติ';
 
-  // 9Q
-  if (has2QRisk) {
-    const q9 = get9QScore();
-    const q9Answers = Q9_QUESTIONS.map((_, i) => {
-      const r = $(`input[name="q9_${i}"]:checked`);
-      return r ? parseInt(r.value, 10) : null;
-    });
-    careRecordDraft.nineq_answers = q9Answers;
-    careRecordDraft.nineq_score = q9.total;
-    careRecordDraft.nineq_result = $('#q9ResultText').textContent || null;
-
-    // 8Q (ถ้า 9Q >= 7)
-    if (q9.total >= 7) {
-      const q8 = get8QScore();
-      const q8Answers = Q8_QUESTIONS.map((_, i) => {
-        const r = $(`input[name="q8_${i}"]:checked`);
+    if (has2QRisk) {
+      const q9 = get9QScore();
+      const q9Answers = Q9_QUESTIONS.map((_, i) => {
+        const r = $(`input[name="q9_${i}"]:checked`);
         return r ? parseInt(r.value, 10) : null;
       });
-      careRecordDraft.eightq_answers = q8Answers;
-      careRecordDraft.eightq_score = q8.total;
-      careRecordDraft.eightq_result = $('#q8ResultText').textContent || null;
+      careRecordDraft.nineq_answers = q9Answers;
+      careRecordDraft.nineq_score = q9.total;
+      careRecordDraft.nineq_result = $('#q9ResultText').textContent || null;
+
+      if (q9.total >= 7) {
+        const q8 = get8QScore();
+        const q8Answers = Q8_QUESTIONS.map((_, i) => {
+          const r = $(`input[name="q8_${i}"]:checked`);
+          return r ? parseInt(r.value, 10) : null;
+        });
+        careRecordDraft.eightq_answers = q8Answers;
+        careRecordDraft.eightq_score = q8.total;
+        careRecordDraft.eightq_result = $('#q8ResultText').textContent || null;
+      } else {
+        careRecordDraft.eightq_answers = null;
+        careRecordDraft.eightq_score = null;
+        careRecordDraft.eightq_result = null;
+      }
     } else {
+      careRecordDraft.nineq_answers = null;
+      careRecordDraft.nineq_score = null;
+      careRecordDraft.nineq_result = null;
       careRecordDraft.eightq_answers = null;
       careRecordDraft.eightq_score = null;
       careRecordDraft.eightq_result = null;
     }
-  } else {
-    careRecordDraft.nineq_answers = null;
-    careRecordDraft.nineq_score = null;
-    careRecordDraft.nineq_result = null;
-    careRecordDraft.eightq_answers = null;
-    careRecordDraft.eightq_score = null;
-    careRecordDraft.eightq_result = null;
-  }
-} else if (step === 4) {
+  } else if (step === 4) {
     careRecordDraft.daily_living_activities = collectActivities('step4');
   } else if (step === 5) {
     careRecordDraft.basic_health_activities = collectActivities('step5');
@@ -1361,11 +1326,6 @@ function collectActivities(key) {
   return { items: list };
 }
 
-/* 12.8 restoreStepData (สำหรับ form fields ที่ DOM ยังเก็บค่าเดิมได้) */
-// ข้อมูลใน input/checkbox ยังอยู่เพราะ DOM ไม่ถูก reset ระหว่าง step
-// ฟังก์ชันนี้สำรองไว้สำหรับ logic พิเศษเช่น re-render review
-
-/* 12.9 updateCareProgress */
 function updateCareProgress() {
   const pct = (currentCareStep / totalCareSteps) * 100;
   $('#progressBar').style.width = pct + '%';
@@ -1380,9 +1340,7 @@ function updateCareProgress() {
   });
 }
 
-/* 12.10 renderCareReview */
 function renderCareReview() {
-  // เก็บ Step 1-7 ก่อน
   for (let i = 1; i <= 7; i++) saveStepData(i);
 
   $('#rvPatient').textContent = selectedPatient.fullname;
@@ -1405,7 +1363,6 @@ function renderCareReview() {
   $('#rv8q').textContent = careRecordDraft.eightq_score != null
     ? `${careRecordDraft.eightq_score} (${careRecordDraft.eightq_result||'-'})` : '-';
 
-  // Activities
   const actHtml = [];
   const a4 = (careRecordDraft.daily_living_activities||{}).items||[];
   const a5 = (careRecordDraft.basic_health_activities||{}).items||[];
@@ -1415,23 +1372,19 @@ function renderCareReview() {
   if (a6.length) actHtml.push(`<div><b>ดูแลด้านอื่น:</b><ul class="list-disc ml-5 mt-1">${a6.map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul></div>`);
   $('#rvActivities').innerHTML = actHtml.join('') || '<span class="text-slate-400">ไม่มีข้อมูล</span>';
 
-  // Photos
   $('#rvServiceCount').textContent = serviceImagesBase64.length;
   $('#rvServicePreview').innerHTML = serviceImagesBase64.slice(0,9).map(im =>
     `<img src="${im.base64}" onclick="viewImage(this.src)">`).join('');
 
-  // Signature
   if (signaturePad && !signaturePad.isEmpty()) {
     $('#rvSig').src = signaturePad.toDataURL('image/png');
   }
 }
 
-/* 12.11 submitCareRecord */
 async function submitCareRecord() {
   if (isSubmittingCare) return;
   if (!validateCareStep(8)) return;
 
-  // เก็บ note
   saveStepData(8);
 
   const c = await Swal.fire({
@@ -1460,13 +1413,11 @@ async function submitCareRecord() {
     await Swal.fire({ icon:'success', title:'บันทึกสำเร็จ', timer:1500, showConfirmButton:false });
     closeModal('careRecordModal');
 
-    // Reset
     careRecordDraft = {};
     selectedPatient = null;
     olderImageBase64 = null;
     serviceImagesBase64 = [];
 
-    // Reload
     if (currentPage === 'myPatients') loadAssignedPatients();
     else if (currentPage === 'dashboard') loadDashboardSummary();
   } catch (err) {
@@ -1500,63 +1451,21 @@ function interpretBMI(bmi) {
   return 'อ้วนระดับ 2';
 }
 
+
 /* =====================================================
    14. MENTAL HEALTH 2Q / 9Q / 8Q
    ===================================================== */
-
-const Q2_QUESTIONS = [
-  'ใน 2 สัปดาห์ที่ผ่านมา รวมวันนี้ ท่านรู้สึก หดหู่ เศร้า หรือท้อแท้สิ้นหวัง หรือไม่',
-  'ใน 2 สัปดาห์ที่ผ่านมา รวมวันนี้ ท่านรู้สึก เบื่อ ทำอะไรก็ไม่เพลิดเพลิน หรือไม่'
-];
-
-const Q9_QUESTIONS = [
-  'เบื่อ ไม่สนใจอยากทำอะไร',
-  'ไม่สบายใจ ซึมเศร้า ท้อแท้',
-  'หลับยากหรือหลับๆ ตื่นๆ หรือหลับมากไป',
-  'เหนื่อยง่ายหรือไม่ค่อยมีแรง',
-  'เบื่ออาหารหรือกินมากเกินไป',
-  'รู้สึกไม่ดีกับตัวเอง คิดว่าตัวเองล้มเหลวหรือครอบครัวผิดหวัง',
-  'สมาธิไม่ดี เวลาทำอะไร เช่น ดูโทรทัศน์ ฟังวิทยุ หรือทำงานที่ต้องใช้ความตั้งใจ',
-  'พูดช้า ทำอะไรช้าลงจนคนอื่นสังเกตเห็นได้ หรือกระสับกระส่ายไม่สามารถอยู่นิ่งได้เหมือนที่เคยเป็น',
-  'คิดทำร้ายตนเอง หรือคิดว่าถ้าตายไปคงจะดี'
-];
-
-const Q9_OPTIONS = [
-  { val: 0, label: 'ไม่มีเลย' },
-  { val: 1, label: 'บางวัน' },
-  { val: 2, label: 'บ่อย' },
-  { val: 3, label: 'ทุกวัน' }
-];
-
-// 8Q — น้ำหนักคะแนนต่างกันในแต่ละข้อ
-const Q8_QUESTIONS = [
-  { text: 'คิดอยากตาย หรือ คิดว่าตายไปจะดีกว่า', no: 0, yes: 1 },
-  { text: 'อยากทำร้ายตัวเอง หรือ ทำให้ตัวเองบาดเจ็บ', no: 0, yes: 2 },
-  { text: 'คิดเกี่ยวกับการฆ่าตัวตาย', no: 0, yes: 6,
-    note: 'ในช่วง 1 เดือนที่ผ่านมารวมวันนี้' },
-  { text: 'มีแผนการที่จะฆ่าตัวตาย', no: 0, yes: 8 },
-  { text: 'ได้เตรียมการที่จะทำร้ายตนเอง หรือเตรียมการจะฆ่าตัวตายโดยตั้งใจว่าจะให้ตายจริงๆ', no: 0, yes: 9 },
-  { text: 'ได้ทำให้ตนเองบาดเจ็บแต่ไม่ตั้งใจที่จะทำให้เสียชีวิต', no: 0, yes: 4 },
-  { text: 'ได้พยายามฆ่าตัวตายโดยคาดหวัง/ตั้งใจที่จะให้ตาย', no: 0, yes: 10 },
-  { text: 'ตลอดชีวิตที่ผ่านมา ท่านเคยพยายามฆ่าตัวตาย', no: 0, yes: 4 }
-];
-
-/**
- * Render คำถามทั้งหมด - เรียกครั้งเดียวตอน initApp
- */
 function renderMentalHealthQuestions() {
   const q2List = document.getElementById('q2List');
   const q9List = document.getElementById('q9List');
   const q8List = document.getElementById('q8List');
 
-  // Debug log
   if (APP_CONFIG && APP_CONFIG.DEBUG) {
     console.log('[MH Render] q2List:', !!q2List, 'q9List:', !!q9List, 'q8List:', !!q8List);
   }
 
-  // ถ้าไม่เจอ element เลย = HTML ยังไม่โหลด → exit
   if (!q2List && !q9List && !q8List) {
-    console.warn('[MH] ไม่พบ element q2List/q9List/q8List - ตรวจ HTML');
+    console.warn('[MH] ไม่พบ element - ตรวจ HTML Step 3');
     return false;
   }
 
@@ -1580,8 +1489,6 @@ function renderMentalHealthQuestions() {
       </div>
     `).join('');
     q2List.dataset.rendered = '1';
-
-    // Bind events (ใช้ event delegation - ปลอดภัยกว่า)
     q2List.addEventListener('change', (e) => {
       if (e.target.name && e.target.name.startsWith('q2_')) onQ2Change(e);
     });
@@ -1605,7 +1512,6 @@ function renderMentalHealthQuestions() {
       </div>
     `).join('');
     q9List.dataset.rendered = '1';
-
     q9List.addEventListener('change', (e) => {
       if (e.target.name && e.target.name.startsWith('q9_')) onQ9Change(e);
     });
@@ -1632,7 +1538,6 @@ function renderMentalHealthQuestions() {
       </div>
     `).join('');
     q8List.dataset.rendered = '1';
-
     q8List.addEventListener('change', (e) => {
       if (e.target.name && e.target.name.startsWith('q8_')) onQ8Change(e);
     });
@@ -1641,18 +1546,12 @@ function renderMentalHealthQuestions() {
   return true;
 }
 
-/**
- * เมื่อตอบ 2Q
- */
 function onQ2Change(e) {
   const idx = e.target.name.replace('q2_', '');
-  const wrap = $(`[data-q2="${idx}"]`);
+  const wrap = document.querySelector(`[data-q2="${idx}"]`);
   if (wrap) wrap.classList.add('answered');
-
-  // Visual selection
   updateToggleVisual(wrap);
 
-  // ตรวจว่าตอบครบทุกข้อหรือยัง
   const answers = getQ2Answers();
   if (answers.length === Q2_QUESTIONS.length) {
     interpret2Q(answers);
@@ -1667,7 +1566,6 @@ function getQ2Answers() {
 }
 
 function interpret2Q(answers) {
-  // ตอบ "มี" อย่างน้อย 1 ข้อ = เสี่ยง
   const hasRisk = answers.some(v => v === 1);
   const resultDiv = $('#q2Result');
 
@@ -1676,13 +1574,11 @@ function interpret2Q(answers) {
     resultDiv.classList.add('mh-result-medium');
     resultDiv.innerHTML = '⚠️ เสี่ยง — แสดงแบบประเมิน 9Q ต่อ';
     $('#block9Q').classList.remove('hidden');
-    // Scroll ไปยัง 9Q
     setTimeout(() => $('#block9Q').scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
   } else {
     resultDiv.classList.remove('hidden', 'mh-result-medium');
     resultDiv.classList.add('mh-result-normal');
     resultDiv.innerHTML = '✅ ปกติ — ไม่มีภาวะซึมเศร้า';
-    // ซ่อน 9Q + 8Q + เคลียร์
     $('#block9Q').classList.add('hidden');
     $('#block8Q').classList.add('hidden');
     clearQ9Answers();
@@ -1690,15 +1586,11 @@ function interpret2Q(answers) {
   }
 }
 
-/**
- * เมื่อตอบ 9Q
- */
 function onQ9Change(e) {
   const idx = e.target.name.replace('q9_', '');
-  const wrap = $(`[data-q9="${idx}"]`);
+  const wrap = document.querySelector(`[data-q9="${idx}"]`);
   if (wrap) wrap.classList.add('answered');
   updateToggleVisual(wrap);
-
   interpret9Q();
 }
 
@@ -1713,11 +1605,8 @@ function get9QScore() {
 
 function interpret9Q() {
   const { total, answered, totalQuestions } = get9QScore();
-
-  // อัปเดตคะแนน
   $('#q9TotalScore').textContent = total;
 
-  // ตอบครบหรือยัง
   if (answered < totalQuestions) {
     $('#q9Result').classList.add('hidden');
     $('#block8Q').classList.add('hidden');
@@ -1725,19 +1614,17 @@ function interpret9Q() {
     return;
   }
 
-  // แปลผล
-  let level, text, cls;
-  if (total <= 6)       { level = 'normal';  text = 'ไม่มีภาวะซึมเศร้า';            cls = 'mh-result-normal'; }
-  else if (total <= 12) { level = 'mild';    text = 'มีภาวะซึมเศร้าระดับน้อย';      cls = 'mh-result-mild'; }
-  else if (total <= 18) { level = 'medium';  text = 'มีภาวะซึมเศร้าระดับปานกลาง';  cls = 'mh-result-medium'; }
-  else                  { level = 'severe';  text = 'มีภาวะซึมเศร้าระดับรุนแรง';   cls = 'mh-result-severe'; }
+  let text, cls;
+  if (total <= 6)       { text = 'ไม่มีภาวะซึมเศร้า';           cls = 'mh-result-normal'; }
+  else if (total <= 12) { text = 'มีภาวะซึมเศร้าระดับน้อย';     cls = 'mh-result-mild'; }
+  else if (total <= 18) { text = 'มีภาวะซึมเศร้าระดับปานกลาง'; cls = 'mh-result-medium'; }
+  else                  { text = 'มีภาวะซึมเศร้าระดับรุนแรง';  cls = 'mh-result-severe'; }
 
   const resultDiv = $('#q9Result');
   resultDiv.classList.remove('hidden','mh-result-normal','mh-result-mild','mh-result-medium','mh-result-severe');
   resultDiv.classList.add(cls);
   $('#q9ResultText').textContent = text;
 
-  // แสดง 8Q ถ้าคะแนน >= 7
   if (total >= 7) {
     $('#block8Q').classList.remove('hidden');
     setTimeout(() => $('#block8Q').scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
@@ -1747,15 +1634,11 @@ function interpret9Q() {
   }
 }
 
-/**
- * เมื่อตอบ 8Q
- */
 function onQ8Change(e) {
   const idx = e.target.name.replace('q8_', '');
-  const wrap = $(`[data-q8="${idx}"]`);
+  const wrap = document.querySelector(`[data-q8="${idx}"]`);
   if (wrap) wrap.classList.add('answered');
   updateToggleVisual(wrap);
-
   interpret8Q();
 }
 
@@ -1770,7 +1653,6 @@ function get8QScore() {
 
 function interpret8Q() {
   const { total, answered, totalQuestions } = get8QScore();
-
   $('#q8TotalScore').textContent = total;
 
   if (answered < totalQuestions) {
@@ -1779,24 +1661,22 @@ function interpret8Q() {
     return;
   }
 
-  let level, text, cls;
-  if (total === 0)      { level = 'normal'; text = 'ไม่มีแนวโน้มฆ่าตัวตายในปัจจุบัน';            cls = 'mh-result-normal'; }
-  else if (total <= 8)  { level = 'mild';   text = 'มีแนวโน้มฆ่าตัวตายในปัจจุบันระดับน้อย';     cls = 'mh-result-mild'; }
-  else if (total <= 16) { level = 'medium'; text = 'มีแนวโน้มฆ่าตัวตายในปัจจุบันระดับกลาง';     cls = 'mh-result-medium'; }
-  else                  { level = 'severe'; text = 'มีแนวโน้มฆ่าตัวตายในปัจจุบันระดับรุนแรง'; cls = 'mh-result-severe'; }
+  let text, cls;
+  if (total === 0)      { text = 'ไม่มีแนวโน้มฆ่าตัวตายในปัจจุบัน';            cls = 'mh-result-normal'; }
+  else if (total <= 8)  { text = 'มีแนวโน้มฆ่าตัวตายในปัจจุบันระดับน้อย';     cls = 'mh-result-mild'; }
+  else if (total <= 16) { text = 'มีแนวโน้มฆ่าตัวตายในปัจจุบันระดับกลาง';     cls = 'mh-result-medium'; }
+  else                  { text = 'มีแนวโน้มฆ่าตัวตายในปัจจุบันระดับรุนแรง'; cls = 'mh-result-severe'; }
 
   const resultDiv = $('#q8Result');
   resultDiv.classList.remove('hidden','mh-result-normal','mh-result-mild','mh-result-medium','mh-result-severe');
   resultDiv.classList.add(cls);
   $('#q8ResultText').textContent = text;
 
-  // Alert เมื่อคะแนน >= 17 (รุนแรง)
   const badge = $('#cr8qBadge');
   if (total >= 17) {
     badge.classList.remove('hidden');
     Swal.fire({
-      icon: 'warning',
-      title: '⚠️ ความเสี่ยงสูง',
+      icon: 'warning', title: '⚠️ ความเสี่ยงสูง',
       html: `<div class="text-left text-sm">
         <p class="text-red-700 font-medium mb-2">คะแนน 8Q = ${total}</p>
         <p>${text}</p>
@@ -1809,9 +1689,6 @@ function interpret8Q() {
   }
 }
 
-/**
- * อัปเดต visual ของ toggle (highlight ตัวที่เลือก)
- */
 function updateToggleVisual(wrap) {
   if (!wrap) return;
   $$('label', wrap).forEach(l => {
@@ -1834,8 +1711,8 @@ function clearQ9Answers() {
       $$('label', w).forEach(l => l.classList.remove('is-selected'));
     }
   });
-  $('#q9TotalScore').textContent = '0';
-  $('#q9Result').classList.add('hidden');
+  const el = $('#q9TotalScore'); if (el) el.textContent = '0';
+  const r = $('#q9Result'); if (r) r.classList.add('hidden');
 }
 
 function clearQ8Answers() {
@@ -1847,9 +1724,9 @@ function clearQ8Answers() {
       $$('label', w).forEach(l => l.classList.remove('is-selected'));
     }
   });
-  $('#q8TotalScore').textContent = '0';
-  $('#q8Result').classList.add('hidden');
-  $('#cr8qBadge').classList.add('hidden');
+  const el = $('#q8TotalScore'); if (el) el.textContent = '0';
+  const r = $('#q8Result'); if (r) r.classList.add('hidden');
+  const b = $('#cr8qBadge'); if (b) b.classList.add('hidden');
 }
 
 function clearAllMentalHealth() {
@@ -1861,12 +1738,13 @@ function clearAllMentalHealth() {
       $$('label', w).forEach(l => l.classList.remove('is-selected'));
     }
   });
-  $('#q2Result').classList.add('hidden');
-  $('#block9Q').classList.add('hidden');
-  $('#block8Q').classList.add('hidden');
+  const q2r = $('#q2Result'); if (q2r) q2r.classList.add('hidden');
+  const b9 = $('#block9Q'); if (b9) b9.classList.add('hidden');
+  const b8 = $('#block8Q'); if (b8) b8.classList.add('hidden');
   clearQ9Answers();
   clearQ8Answers();
 }
+
 
 /* =====================================================
    15. IMAGE UPLOAD & SIGNATURE PAD
@@ -1893,7 +1771,7 @@ async function handleServiceImagesPreview(e) {
       serviceImagesBase64.push({ base64: b64, name: f.name });
     } catch (err) { console.warn(err); }
   }
-  e.target.value = ''; // reset เพื่อเลือกซ้ำได้
+  e.target.value = '';
   renderServiceGrid();
 }
 
@@ -1949,11 +1827,9 @@ function convertFileToBase64(file, maxSize, quality) {
   });
 }
 
-/* Signature Pad */
 function initSignaturePad() {
   const canvas = $('#sigCanvas');
   if (!canvas) return;
-  // Resize canvas to actual width
   resizeSigCanvas(canvas);
   if (signaturePad) { signaturePad.off(); }
   signaturePad = new SignaturePad(canvas, {
@@ -1961,7 +1837,6 @@ function initSignaturePad() {
     penColor: '#0F172A',
     minWidth: 0.8, maxWidth: 2.4
   });
-  // re-handle resize on rotation
   window.addEventListener('resize', debounce(() => resizeSigCanvas(canvas), 200), { once: false });
 }
 
@@ -1987,8 +1862,8 @@ let currentReportTab = 'daily';
 let currentReportRows = [];
 
 function setupReportControls() {
-  // เดือน-ปี
   const monthSel = $('#reportMonth');
+  if (!monthSel) return;
   const months = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
   monthSel.innerHTML = months.map((m,i)=>`<option value="${i+1}">${m}</option>`).join('');
   monthSel.value = new Date().getMonth() + 1;
@@ -2003,7 +1878,6 @@ function setupReportControls() {
 
 function initReportPage() {
   if (session.user.role === 'admin') {
-    // โหลด caregiver dropdown
     callServer('getCaregivers', session.token).then(res => {
       const cgs = res.data || [];
       const opts = '<option value="">ทั้งหมด</option>' +
@@ -2012,7 +1886,6 @@ function initReportPage() {
       $('#reportCgFilterMonthly').innerHTML = opts;
     }).catch(()=>{});
   } else {
-    // member: ซ่อน filter caregiver
     $('#reportCgFilterDaily').closest('div').style.display = 'none';
     $('#reportCgFilterMonthly').closest('div').style.display = 'none';
   }
@@ -2030,7 +1903,7 @@ function switchReportTab(tab) {
 }
 
 async function loadDailyReport() {
-  const date = $('#reportDateISO').value;  // เปลี่ยนจาก reportDate
+  const date = $('#reportDate').value;
   const filters = {};
   const cg = $('#reportCgFilterDaily').value;
   if (cg) filters.caregiver_id = cg;
@@ -2125,23 +1998,20 @@ function printReport() {
 
 
 /* =====================================================
-   17. SETTINGS - ขยายเป็น 3 แท็บ
+   17. SETTINGS — 3 Tabs
    ===================================================== */
 let configSchemaCache = null;
 let editedSensitiveKeys = new Set();
 
 async function loadSettings() {
-  // bind tabs (ครั้งแรก)
   if (!loadSettings._bound) {
     $$('.settings-tab').forEach(b =>
       b.addEventListener('click', () => switchSettingsTab(b.dataset.stab)));
-    $('#btnSaveConfig').addEventListener('click', saveAppConfig);
-    $('#btnTestConnection').addEventListener('click', testConnection);
-    $('#btnRefreshConfig').addEventListener('click', refreshConfig);
+    if ($('#btnSaveConfig'))     $('#btnSaveConfig').addEventListener('click', saveAppConfig);
+    if ($('#btnTestConnection')) $('#btnTestConnection').addEventListener('click', testConnection);
+    if ($('#btnRefreshConfig'))  $('#btnRefreshConfig').addEventListener('click', refreshConfig);
     loadSettings._bound = true;
   }
-
-  // โหลดเฉพาะแท็บที่กำลังเปิด
   const active = $('.settings-tab.tab-active')?.dataset.stab || 'org';
   switchSettingsTab(active);
 }
@@ -2149,27 +2019,28 @@ async function loadSettings() {
 function switchSettingsTab(tab) {
   $$('.settings-tab').forEach(b => b.classList.toggle('tab-active', b.dataset.stab === tab));
   $$('.settings-panel').forEach(p => p.classList.add('hidden'));
-  $('#settingsTab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.remove('hidden');
+  const panel = $('#settingsTab' + tab.charAt(0).toUpperCase() + tab.slice(1));
+  if (panel) panel.classList.remove('hidden');
 
   if (tab === 'org')    loadOrgSettings();
   if (tab === 'config') loadConfigSettings();
   if (tab === 'status') loadStatusInfo();
 }
 
-/* ----- Tab 1: ข้อมูลหน่วยงาน (เดิม) ----- */
 async function loadOrgSettings() {
   showLoading();
   try {
     const res = await callServer('getSystemSettings');
     const s = res.data || {};
-    $('#setOrgName').value    = s.org_name || '';
-    $('#setOrgSubname').value = s.org_subname || '';
-    $('#setOrgAddress').value = s.org_address || '';
-    $('#setOrgPhone').value   = s.org_phone || '';
-    $('#setOrgLogo').value    = s.org_logo_url || '';
+    if ($('#setOrgName'))    $('#setOrgName').value    = s.org_name || '';
+    if ($('#setOrgSubname')) $('#setOrgSubname').value = s.org_subname || '';
+    if ($('#setOrgAddress')) $('#setOrgAddress').value = s.org_address || '';
+    if ($('#setOrgPhone'))   $('#setOrgPhone').value   = s.org_phone || '';
+    if ($('#setOrgLogo'))    $('#setOrgLogo').value    = s.org_logo_url || '';
   } catch (err) { showAlert('error','ผิดพลาด', err.message); }
   finally { hideLoading(); }
 }
+
 async function saveSettings() {
   const data = {
     org_name:    $('#setOrgName').value.trim(),
@@ -2186,7 +2057,6 @@ async function saveSettings() {
   finally { hideLoading(); }
 }
 
-/* ----- Tab 2: Config Form (ใหม่) ----- */
 async function loadConfigSettings() {
   showLoading('กำลังโหลด Config...');
   try {
@@ -2199,7 +2069,6 @@ async function loadConfigSettings() {
       `<div class="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 text-sm">
         <p class="font-medium">ไม่สามารถโหลด Config ได้</p>
         <p class="mt-1">${escapeHtml(err.message)}</p>
-        <p class="mt-2 text-xs">โปรดตรวจสอบว่าตั้ง CONFIG_SHEET_ID ใน Script Properties แล้ว</p>
       </div>`;
   } finally { hideLoading(); }
 }
@@ -2207,20 +2076,15 @@ async function loadConfigSettings() {
 function renderConfigForm(data) {
   const groups = data.groups;
   const schema = data.schema;
-
-  // จัดกลุ่ม fields ตาม group
   const grouped = {};
   Object.keys(groups).forEach(g => grouped[g] = []);
-  schema.forEach(f => {
-    if (grouped[f.group]) grouped[f.group].push(f);
-  });
+  schema.forEach(f => { if (grouped[f.group]) grouped[f.group].push(f); });
 
   let html = '';
   Object.keys(groups).forEach(gKey => {
     const g = groups[gKey];
     const fields = grouped[gKey];
     if (!fields.length) return;
-
     html += `
       <div class="config-group">
         <div class="config-group-header color-${g.color}">
@@ -2237,18 +2101,14 @@ function renderConfigForm(data) {
   });
   $('#configForm').innerHTML = html;
 
-  // Bind sensitive toggles
   $$('.config-sensitive-toggle').forEach(btn =>
     btn.addEventListener('click', () => toggleSensitiveEdit(btn.dataset.key)));
-
-  // Track changes on sensitive inputs
   $$('input[data-sensitive="true"]').forEach(inp => {
     inp.addEventListener('input', () => {
       editedSensitiveKeys.add(inp.dataset.key);
       inp.classList.add('config-sensitive-edited');
     });
   });
-
   if (window.lucide) lucide.createIcons();
 }
 
@@ -2267,17 +2127,9 @@ function renderConfigField(f) {
   if (f.sensitive) {
     inputHtml = `
       <div class="config-field-input-wrap">
-        <input
-          type="password"
-          id="${id}"
-          data-key="${f.key}"
-          data-sensitive="true"
-          class="input-field pr-12"
-          value="${escapeHtml(f.value || '')}"
-          placeholder="${placeholder}"
-          autocomplete="new-password"
-          readonly
-        >
+        <input type="password" id="${id}" data-key="${f.key}" data-sensitive="true"
+          class="input-field pr-12" value="${escapeHtml(f.value || '')}"
+          placeholder="${placeholder}" autocomplete="new-password" readonly>
         <button type="button" class="config-sensitive-toggle" data-key="${f.key}" title="แก้ไขค่า">
           <i data-lucide="edit-3" class="w-4 h-4"></i>
         </button>
@@ -2287,15 +2139,8 @@ function renderConfigField(f) {
       </p>`;
   } else {
     inputHtml = `
-      <input
-        type="${inputType}"
-        id="${id}"
-        data-key="${f.key}"
-        ${numberAttrs}
-        class="input-field"
-        value="${escapeHtml(f.value || '')}"
-        placeholder="${placeholder}"
-      >
+      <input type="${inputType}" id="${id}" data-key="${f.key}" ${numberAttrs}
+        class="input-field" value="${escapeHtml(f.value || '')}" placeholder="${placeholder}">
       ${help ? `<p class="config-field-help">${help}</p>` : ''}`;
   }
 
@@ -2309,11 +2154,9 @@ function renderConfigField(f) {
     </div>`;
 }
 
-/** กดปุ่มดินสอ → ปลดล็อก input + เคลียร์ค่า mask */
 function toggleSensitiveEdit(key) {
   const inp = $('#cfg_' + key);
   if (!inp) return;
-
   if (inp.readOnly) {
     inp.readOnly = false;
     inp.value = '';
@@ -2326,24 +2169,17 @@ function toggleSensitiveEdit(key) {
 }
 
 async function saveAppConfig() {
-  // เก็บค่าจากทุก field
   const updates = {};
   $$('input[data-key]').forEach(inp => {
     const key = inp.dataset.key;
     const isSensitive = inp.dataset.sensitive === 'true';
-
-    // sensitive: ส่งเฉพาะที่ user แก้
     if (isSensitive) {
-      if (editedSensitiveKeys.has(key) && inp.value.trim()) {
-        updates[key] = inp.value.trim();
-      }
+      if (editedSensitiveKeys.has(key) && inp.value.trim()) updates[key] = inp.value.trim();
       return;
     }
-    // non-sensitive: ส่งทุกค่า (รวมที่ว่าง)
     updates[key] = inp.value.trim();
   });
 
-  // Validate ฝั่ง client เบื้องต้น
   const required = configSchemaCache.schema.filter(s => s.required && !s.sensitive);
   for (const r of required) {
     if (!updates[r.key]) {
@@ -2353,8 +2189,7 @@ async function saveAppConfig() {
   }
 
   const c = await Swal.fire({
-    icon: 'question',
-    title: 'บันทึก Config?',
+    icon: 'question', title: 'บันทึก Config?',
     html: `<div class="text-left text-sm">
       <p>ระบบจะ:</p>
       <ul class="list-disc ml-5 mt-2 space-y-1">
@@ -2363,8 +2198,7 @@ async function saveAppConfig() {
         <li>${editedSensitiveKeys.size > 0 ? `อัปเดต ${editedSensitiveKeys.size} ค่าที่เป็นความลับ` : 'ไม่อัปเดตค่าความลับ (ใช้ค่าเดิม)'}</li>
       </ul>
     </div>`,
-    showCancelButton: true,
-    confirmButtonText: 'บันทึก', cancelButtonText: 'ยกเลิก',
+    showCancelButton: true, confirmButtonText: 'บันทึก', cancelButtonText: 'ยกเลิก',
     confirmButtonColor: '#22C55E'
   });
   if (!c.isConfirmed) return;
@@ -2374,13 +2208,12 @@ async function saveAppConfig() {
     const res = await callServer('saveAppConfig', session.token, updates);
     showToast('success', `บันทึก ${res.data.count} รายการสำเร็จ`);
     editedSensitiveKeys.clear();
-    await loadConfigSettings(); // reload เพื่อแสดงค่า mask ใหม่
+    await loadConfigSettings();
   } catch (err) {
     showAlert('error', 'บันทึกไม่สำเร็จ', err.message);
   } finally { hideLoading(); }
 }
 
-/* ----- ทดสอบการเชื่อมต่อ ----- */
 async function testConnection() {
   showLoading('กำลังทดสอบการเชื่อมต่อ...');
   try {
@@ -2399,8 +2232,7 @@ async function testConnection() {
       bucketHtml += '</ul>';
     }
     Swal.fire({
-      icon: 'success',
-      title: '✅ เชื่อมต่อสำเร็จ',
+      icon: 'success', title: '✅ เชื่อมต่อสำเร็จ',
       html: `<div class="text-left text-sm">
         <p><b>Database:</b> ${escapeHtml(d.database)}</p>
         <p><b>Response Time:</b> ${escapeHtml(d.responseTime)}</p>
@@ -2410,16 +2242,13 @@ async function testConnection() {
     });
   } catch (err) {
     Swal.fire({
-      icon: 'error',
-      title: '❌ เชื่อมต่อไม่สำเร็จ',
-      html: `<div class="text-left text-sm text-red-700">${escapeHtml(err.message)}</div>
-        <p class="mt-3 text-xs text-slate-500">โปรดตรวจสอบ SUPABASE_URL และ SERVICE_ROLE_KEY</p>`,
+      icon: 'error', title: '❌ เชื่อมต่อไม่สำเร็จ',
+      html: `<div class="text-left text-sm text-red-700">${escapeHtml(err.message)}</div>`,
       confirmButtonColor: '#EF4444'
     });
   } finally { hideLoading(); }
 }
 
-/* ----- รีเฟรช Cache ----- */
 async function refreshConfig() {
   showLoading('กำลังรีเฟรช...');
   try {
@@ -2430,15 +2259,16 @@ async function refreshConfig() {
   finally { hideLoading(); }
 }
 
-/* ----- Tab 3: สถานะระบบ ----- */
 async function loadStatusInfo() {
   $('#statusInfo').innerHTML = '<div class="skeleton h-32"></div>';
   try {
     const res = await callServer('getAppConfig', session.token);
     const d = res.data;
     const sheetUrl = d.sheetUrl || '#';
-    $('#btnOpenConfigSheet').href = sheetUrl;
-    if (!d.sheetId) $('#btnOpenConfigSheet').classList.add('opacity-50','pointer-events-none');
+    if ($('#btnOpenConfigSheet')) {
+      $('#btnOpenConfigSheet').href = sheetUrl;
+      if (!d.sheetId) $('#btnOpenConfigSheet').classList.add('opacity-50','pointer-events-none');
+    }
 
     $('#statusInfo').innerHTML = `
       <div class="status-info-row">
@@ -2470,7 +2300,123 @@ async function loadStatusInfo() {
 
 
 /* =====================================================
-   18. UTILITIES
+   18. THAI DATE PICKER (Flatpickr)
+   ===================================================== */
+function createThaiDatePicker(selector, hiddenSelector, options) {
+  const opts = options || {};
+  const visible = document.querySelector(selector);
+  const hidden = document.querySelector(hiddenSelector);
+  if (!visible || !hidden) return null;
+  if (visible._flatpickr) visible._flatpickr.destroy();
+
+  const fp = flatpickr(visible, {
+    locale: thaiLocale(),
+    dateFormat: 'd/m/Y',
+    maxDate: opts.maxDate || 'today',
+    minDate: opts.minDate || '1900-01-01',
+    disableMobile: true,
+    allowInput: false,
+
+    formatDate: function(date, format) {
+      if (!date) return '';
+      const d = String(date.getDate()).padStart(2, '0');
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const y = date.getFullYear() + 543;
+      return `${d}/${m}/${y}`;
+    },
+
+    parseDate: function(dateStr, format) {
+      if (!dateStr) return undefined;
+      if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) return new Date(dateStr);
+      const parts = String(dateStr).split('/');
+      if (parts.length === 3) {
+        const d = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10) - 1;
+        let y = parseInt(parts[2], 10);
+        if (y > 2400) y -= 543;
+        return new Date(y, m, d);
+      }
+      return undefined;
+    },
+
+    onChange: function(selectedDates, dateStr, instance) {
+      if (selectedDates && selectedDates[0]) {
+        const d = selectedDates[0];
+        const iso = d.getFullYear() + '-'
+                  + String(d.getMonth() + 1).padStart(2, '0') + '-'
+                  + String(d.getDate()).padStart(2, '0');
+        hidden.value = iso;
+        if (opts.onChange) opts.onChange(iso, d);
+      } else {
+        hidden.value = '';
+      }
+    },
+
+    onReady: function(_, __, instance) { patchYearToThaiBuddhist(instance); },
+    onMonthChange: function(_, __, instance) { patchYearToThaiBuddhist(instance); },
+    onYearChange: function(_, __, instance) { patchYearToThaiBuddhist(instance); },
+    onOpen: function(_, __, instance) { patchYearToThaiBuddhist(instance); }
+  });
+
+  if (hidden.value) fp.setDate(hidden.value, true);
+  return fp;
+}
+
+function thaiLocale() {
+  return {
+    weekdays: {
+      shorthand: ['อา','จ','อ','พ','พฤ','ศ','ส'],
+      longhand:  ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์']
+    },
+    months: {
+      shorthand: ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'],
+      longhand:  ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม']
+    },
+    firstDayOfWeek: 0,
+    ordinal: () => '',
+    rangeSeparator: ' ถึง ',
+    weekAbbreviation: 'สัปดาห์',
+    scrollTitle: 'เลื่อนเพื่อเปลี่ยน',
+    toggleTitle: 'คลิกเพื่อสลับ',
+    amPM: ['AM','PM']
+  };
+}
+
+function patchYearToThaiBuddhist(instance) {
+  if (!instance || !instance.calendarContainer) return;
+  setTimeout(() => {
+    const yearInput = instance.calendarContainer.querySelector('.numInput.cur-year');
+    if (yearInput) {
+      const ad = parseInt(yearInput.value, 10);
+      if (!isNaN(ad) && ad < 2400) {
+        yearInput.setAttribute('data-ad-year', ad);
+        yearInput.value = ad + 543;
+      }
+      if (!yearInput._thaiPatched) {
+        yearInput._thaiPatched = true;
+        yearInput.addEventListener('blur', function() {
+          const be = parseInt(this.value, 10);
+          if (!isNaN(be) && be > 2400) {
+            const ad = be - 543;
+            instance.changeYear(ad);
+          }
+        });
+        const upBtn = yearInput.parentElement.querySelector('.arrowUp');
+        const downBtn = yearInput.parentElement.querySelector('.arrowDown');
+        if (upBtn) upBtn.addEventListener('click', () => {
+          setTimeout(() => patchYearToThaiBuddhist(instance), 50);
+        });
+        if (downBtn) downBtn.addEventListener('click', () => {
+          setTimeout(() => patchYearToThaiBuddhist(instance), 50);
+        });
+      }
+    }
+  }, 10);
+}
+
+
+/* =====================================================
+   19. UTILITIES
    ===================================================== */
 function formatThaiDate(date) {
   if (!date) return '';
@@ -2528,165 +2474,3 @@ window.viewImage = viewImage;
 window.openCareRecordForm = openCareRecordForm;
 window.removeServiceImage = removeServiceImage;
 window.cancelAssignment = cancelAssignment;
-
-/* =====================================================
-   THAI DATE PICKER (Flatpickr + Buddhist Year)
-   ===================================================== */
-
-/**
- * สร้าง Thai Date Picker บน input ที่ระบุ
- * - แสดงปี พ.ศ.
- * - รูปแบบ dd/mm/yyyy
- * - เก็บค่า ISO ใน hidden input
- *
- * @param {string} selector - CSS selector ของ input ที่จะแสดง (เช่น '#pBirthdate')
- * @param {string} hiddenSelector - CSS selector ของ hidden input ที่จะเก็บ ISO date
- * @param {object} options - options เพิ่มเติม
- */
-function createThaiDatePicker(selector, hiddenSelector, options) {
-  const opts = options || {};
-  const visible = document.querySelector(selector);
-  const hidden = document.querySelector(hiddenSelector);
-  if (!visible || !hidden) return null;
-
-  // ทำลาย instance เก่า (ถ้ามี)
-  if (visible._flatpickr) visible._flatpickr.destroy();
-
-  const fp = flatpickr(visible, {
-    locale: thaiLocale(),
-    dateFormat: 'd/m/Y',       // จะถูก override โดย formatDate ด้านล่าง
-    maxDate: opts.maxDate || 'today',
-    minDate: opts.minDate || '1900-01-01',
-    disableMobile: true,        // บังคับใช้ flatpickr ไม่ใช้ native ของมือถือ
-    allowInput: false,
-
-    // ⭐ Format ตอนแสดงผล: dd/mm/yyyy (พ.ศ.)
-    formatDate: function(date, format) {
-      if (!date) return '';
-      const d = String(date.getDate()).padStart(2, '0');
-      const m = String(date.getMonth() + 1).padStart(2, '0');
-      const y = date.getFullYear() + 543; // ค.ศ. → พ.ศ.
-      return `${d}/${m}/${y}`;
-    },
-
-    // ⭐ Parse เวลาตั้งค่า defaultDate จาก hidden ISO
-    parseDate: function(dateStr, format) {
-      if (!dateStr) return undefined;
-      // ถ้าเป็น ISO yyyy-mm-dd
-      if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) {
-        return new Date(dateStr);
-      }
-      // ถ้าเป็น dd/mm/yyyy (พ.ศ.)
-      const parts = String(dateStr).split('/');
-      if (parts.length === 3) {
-        const d = parseInt(parts[0], 10);
-        const m = parseInt(parts[1], 10) - 1;
-        let y = parseInt(parts[2], 10);
-        if (y > 2400) y -= 543; // พ.ศ. → ค.ศ.
-        return new Date(y, m, d);
-      }
-      return undefined;
-    },
-
-    // ⭐ ตอนเลือกวัน → อัปเดต hidden input เป็น ISO
-    onChange: function(selectedDates, dateStr, instance) {
-      if (selectedDates && selectedDates[0]) {
-        const d = selectedDates[0];
-        const iso = d.getFullYear() + '-'
-                  + String(d.getMonth() + 1).padStart(2, '0') + '-'
-                  + String(d.getDate()).padStart(2, '0');
-        hidden.value = iso;
-        if (opts.onChange) opts.onChange(iso, d);
-      } else {
-        hidden.value = '';
-      }
-    },
-
-    // ⭐ ตอนเปิด calendar → render ปี พ.ศ.
-    onReady: function(_, __, instance) {
-      patchYearToThaiBuddhist(instance);
-    },
-    onMonthChange: function(_, __, instance) {
-      patchYearToThaiBuddhist(instance);
-    },
-    onYearChange: function(_, __, instance) {
-      patchYearToThaiBuddhist(instance);
-    },
-    onOpen: function(_, __, instance) {
-      patchYearToThaiBuddhist(instance);
-    }
-  });
-
-  // ตั้งค่าเริ่มต้นจาก hidden (ถ้ามี)
-  if (hidden.value) fp.setDate(hidden.value, true);
-
-  return fp;
-}
-
-/**
- * Locale ภาษาไทย (เดือน, วัน)
- */
-function thaiLocale() {
-  return {
-    weekdays: {
-      shorthand: ['อา','จ','อ','พ','พฤ','ศ','ส'],
-      longhand:  ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์']
-    },
-    months: {
-      shorthand: ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'],
-      longhand:  ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม']
-    },
-    firstDayOfWeek: 0,
-    ordinal: () => '',
-    rangeSeparator: ' ถึง ',
-    weekAbbreviation: 'สัปดาห์',
-    scrollTitle: 'เลื่อนเพื่อเปลี่ยน',
-    toggleTitle: 'คลิกเพื่อสลับ',
-    amPM: ['AM','PM']
-  };
-}
-
-/**
- * แทนที่ปีในตัวเลือกปี (ค.ศ. → พ.ศ.) บน flatpickr calendar
- */
-function patchYearToThaiBuddhist(instance) {
-  if (!instance || !instance.calendarContainer) return;
-  setTimeout(() => {
-    const yearInput = instance.calendarContainer.querySelector('.numInput.cur-year');
-    if (yearInput) {
-      const ad = parseInt(yearInput.value, 10);
-      if (!isNaN(ad) && ad < 2400) {
-        yearInput.setAttribute('data-ad-year', ad);
-        yearInput.value = ad + 543;
-      }
-      // Hijack การพิมพ์ปี
-      if (!yearInput._thaiPatched) {
-        yearInput._thaiPatched = true;
-        yearInput.addEventListener('input', function() {
-          const be = parseInt(this.value, 10);
-          if (!isNaN(be) && be > 2400) {
-            const ad = be - 543;
-            this.setAttribute('data-ad-year', ad);
-            // ไม่ trigger flatpickr event เพื่อหลีกเลี่ยง infinite loop
-          }
-        });
-        yearInput.addEventListener('blur', function() {
-          const be = parseInt(this.value, 10);
-          if (!isNaN(be) && be > 2400) {
-            const ad = be - 543;
-            instance.changeYear(ad);
-          }
-        });
-        // กดขึ้น/ลง
-        const upBtn = yearInput.parentElement.querySelector('.arrowUp');
-        const downBtn = yearInput.parentElement.querySelector('.arrowDown');
-        if (upBtn) upBtn.addEventListener('click', () => {
-          setTimeout(() => patchYearToThaiBuddhist(instance), 50);
-        });
-        if (downBtn) downBtn.addEventListener('click', () => {
-          setTimeout(() => patchYearToThaiBuddhist(instance), 50);
-        });
-      }
-    }
-  }, 10);
-}
