@@ -809,18 +809,14 @@
         
           <!-- ⭐ Master Toggle: เปิด/ปิดการประเมินทั้งหมด -->
           <div class="mh-master-toggle">
-            <div class="flex items-start gap-3 flex-1">
-              <div class="w-10 h-10 rounded-xl bg-brand-100 text-brand-600 flex items-center justify-center flex-shrink-0">
-                <i data-lucide="brain" class="w-5 h-5"></i>
-              </div>
-              <div class="min-w-0 flex-1">
-              
-                <p class="text-xs text-slate-500 mt-0.5" id="mhToggleHint">
-                  เปิดเพื่อทำแบบประเมิน 2Q / 9Q / 8Q
-                </p>
-              </div>
+            <div class="w-9 h-9 rounded-lg bg-brand-100 text-brand-600 flex items-center justify-center flex-shrink-0">
+              <i data-lucide="brain" class="w-5 h-5"></i>
             </div>
-            <label class="toggle-switch">
+            <div class="min-w-0 flex-1">
+              <p class="font-semibold text-slate-800 text-sm">ประเมินสุขภาพจิต</p>
+              <p class="text-xs text-slate-500" id="mhToggleHint">2Q / 9Q / 8Q</p>
+            </div>
+            <label class="toggle-switch flex-shrink-0">
               <input id="mhEnabled" type="checkbox">
               <span class="toggle-slider"></span>
             </label>
