@@ -1138,7 +1138,7 @@ async function openCareRecordForm(patientId) {
   $('#step1Moo').textContent = selectedPatient.moo || '-';
   $('#step1Caregiver').textContent = (selectedPatient.caregiver && selectedPatient.caregiver.fullname)
     || session.user.displayName || '-';
-
+  renderMentalHealthQuestions();
   openModal('careRecordModal');
   showCareStep(1);
 
@@ -1545,9 +1545,23 @@ const Q8_QUESTIONS = [
  * Render คำถามทั้งหมด - เรียกครั้งเดียวตอน initApp
  */
 function renderMentalHealthQuestions() {
+  const q2List = document.getElementById('q2List');
+  const q9List = document.getElementById('q9List');
+  const q8List = document.getElementById('q8List');
+
+  // Debug log
+  if (APP_CONFIG && APP_CONFIG.DEBUG) {
+    console.log('[MH Render] q2List:', !!q2List, 'q9List:', !!q9List, 'q8List:', !!q8List);
+  }
+
+  // ถ้าไม่เจอ element เลย = HTML ยังไม่โหลด → exit
+  if (!q2List && !q9List && !q8List) {
+    console.warn('[MH] ไม่พบ element q2List/q9List/q8List - ตรวจ HTML');
+    return false;
+  }
+
   // ===== 2Q =====
-  const q2List = $('#q2List');
-  if (q2List) {
+  if (q2List && !q2List.dataset.rendered) {
     q2List.innerHTML = Q2_QUESTIONS.map((q, i) => `
       <div class="mh-question" data-q2="${i}">
         <p class="mh-question-text">
@@ -1565,15 +1579,16 @@ function renderMentalHealthQuestions() {
         </div>
       </div>
     `).join('');
+    q2List.dataset.rendered = '1';
 
-    // Bind events
-    $$('input[name^="q2_"]').forEach(r =>
-      r.addEventListener('change', onQ2Change));
+    // Bind events (ใช้ event delegation - ปลอดภัยกว่า)
+    q2List.addEventListener('change', (e) => {
+      if (e.target.name && e.target.name.startsWith('q2_')) onQ2Change(e);
+    });
   }
 
   // ===== 9Q =====
-  const q9List = $('#q9List');
-  if (q9List) {
+  if (q9List && !q9List.dataset.rendered) {
     q9List.innerHTML = Q9_QUESTIONS.map((q, i) => `
       <div class="mh-question" data-q9="${i}">
         <p class="mh-question-text">
@@ -1589,14 +1604,15 @@ function renderMentalHealthQuestions() {
         </div>
       </div>
     `).join('');
+    q9List.dataset.rendered = '1';
 
-    $$('input[name^="q9_"]').forEach(r =>
-      r.addEventListener('change', onQ9Change));
+    q9List.addEventListener('change', (e) => {
+      if (e.target.name && e.target.name.startsWith('q9_')) onQ9Change(e);
+    });
   }
 
   // ===== 8Q =====
-  const q8List = $('#q8List');
-  if (q8List) {
+  if (q8List && !q8List.dataset.rendered) {
     q8List.innerHTML = Q8_QUESTIONS.map((q, i) => `
       ${q.note ? `<p class="text-xs text-amber-600 font-medium mt-2 mb-1 px-1">${escapeHtml(q.note)}</p>` : ''}
       <div class="mh-question" data-q8="${i}">
@@ -1615,10 +1631,14 @@ function renderMentalHealthQuestions() {
         </div>
       </div>
     `).join('');
+    q8List.dataset.rendered = '1';
 
-    $$('input[name^="q8_"]').forEach(r =>
-      r.addEventListener('change', onQ8Change));
+    q8List.addEventListener('change', (e) => {
+      if (e.target.name && e.target.name.startsWith('q8_')) onQ8Change(e);
+    });
   }
+
+  return true;
 }
 
 /**
