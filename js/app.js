@@ -533,8 +533,9 @@ function bindUIEvents() {
 
   $('#crBpEnabled').addEventListener('change', (e) => {
   $('#bpFields').classList.toggle('hidden', !e.target.checked);
-  $('#mhEnabled').addEventListener('change', toggleMentalHealthAssessment);
   });
+   // ⭐ Mental Health Toggle - แยกออกมาเป็น listener อิสระ
+    $('#mhEnabled').addEventListener('change', toggleMentalHealthAssessment);
 
   $('#olderFile').addEventListener('change', handleOlderImagePreview);
   $('#serviceFiles').addEventListener('change', handleServiceImagesPreview);
@@ -1491,49 +1492,132 @@ function interpretBMI(bmi) {
 /* =====================================================
    14. MENTAL HEALTH 2Q / 9Q / 8Q
    ===================================================== */
-/**
- * เปิด/ปิดการประเมินสุขภาพจิตทั้งหมด
- */
-function toggleMentalHealthAssessment() {
-  const enabled = $('#mhEnabled').checked;
-  const masterToggle = $('.mh-master-toggle');
-  const assessmentBlock = $('#mhAssessmentBlock');
-  const skippedNotice = $('#mhSkippedNotice');
-  const hint = $('#mhToggleHint');
-
-  if (enabled) {
-    masterToggle.classList.add('is-active');
-    assessmentBlock.classList.remove('hidden');
-    skippedNotice.classList.add('hidden');
-    hint.textContent = 'กำลังประเมิน — ตอบคำถามด้านล่าง';
-
-    // ⭐ Render หลัง show แล้ว (DOM พร้อมรับ paint)
-    setTimeout(() => {
-      // ตรวจว่าเคย render หรือยัง
-      const q2List = document.getElementById('q2List');
-      if (q2List && !q2List.innerHTML.trim()) {
-        // ลบ flag แล้ว render ใหม่
-        delete q2List.dataset.rendered;
-        const q9 = document.getElementById('q9List');
-        const q8 = document.getElementById('q8List');
-        if (q9) delete q9.dataset.rendered;
-        if (q8) delete q8.dataset.rendered;
-        renderMentalHealthQuestions();
-      }
-      if (window.lucide) lucide.createIcons();
-    }, 50);
-  } else {
-    masterToggle.classList.remove('is-active');
-    assessmentBlock.classList.add('hidden');
-    skippedNotice.classList.remove('hidden');
-    hint.textContent = 'เปิดเพื่อทำแบบประเมิน 2Q / 9Q / 8Q';
-    clearAllMentalHealth();
-  }
-}
+   function toggleMentalHealthAssessment() {
+     const enabled = $('#mhEnabled').checked;
+     const masterToggle = $('.mh-master-toggle');
+     const assessmentBlock = $('#mhAssessmentBlock');
+     const skippedNotice = $('#mhSkippedNotice');
+     const hint = $('#mhToggleHint');
+   
+     if (enabled) {
+       masterToggle.classList.add('is-active');
+       assessmentBlock.classList.remove('hidden');
+       skippedNotice.classList.add('hidden');
+       hint.textContent = 'กำลังประเมิน — ตอบคำถามด้านล่าง';
+   
+       // ⭐ Render ทุกครั้งที่เปิด — กันพลาด
+       renderMentalHealthQuestions();
+     } else {
+       masterToggle.classList.remove('is-active');
+       assessmentBlock.classList.add('hidden');
+       skippedNotice.classList.remove('hidden');
+       hint.textContent = 'เปิดเพื่อทำแบบประเมิน 2Q / 9Q / 8Q';
+       clearAllMentalHealth();
+     }
+   
+     if (window.lucide) lucide.createIcons();
+   }
 
 function renderMentalHealthQuestions() {
   const q2List = document.getElementById('q2List');
-I
+  const q9List = document.getElementById('q9List');
+  const q8List = document.getElementById('q8List');
+
+  if (APP_CONFIG && APP_CONFIG.DEBUG) {
+    console.log('[MH Render] q2List:', !!q2List, 'q9List:', !!q9List, 'q8List:', !!q8List);
+  }
+
+  if (!q2List && !q9List && !q8List) {
+    console.warn('[MH] ไม่พบ element q2List/q9List/q8List - ตรวจ HTML Step 3');
+    return false;
+  }
+
+  // ===== 2Q =====
+  if (q2List) {
+    q2List.innerHTML = Q2_QUESTIONS.map((q, i) => `
+      <div class="mh-question" data-q2="${i}">
+        <p class="mh-question-text">
+          <span class="qnum">${i + 1}.</span><span>${escapeHtml(q)}</span>
+        </p>
+        <div class="mh-toggle">
+          <label data-val="0">
+            <input type="radio" name="q2_${i}" value="0">
+            <span>ไม่มี</span>
+          </label>
+          <label data-val="1">
+            <input type="radio" name="q2_${i}" value="1">
+            <span>มี</span>
+          </label>
+        </div>
+      </div>
+    `).join('');
+
+    if (!q2List.dataset.bound) {
+      q2List.addEventListener('change', (e) => {
+        if (e.target.name && e.target.name.startsWith('q2_')) onQ2Change(e);
+      });
+      q2List.dataset.bound = '1';
+    }
+  }
+
+  // ===== 9Q =====
+  if (q9List) {
+    q9List.innerHTML = Q9_QUESTIONS.map((q, i) => `
+      <div class="mh-question" data-q9="${i}">
+        <p class="mh-question-text">
+          <span class="qnum">${i + 1}.</span><span>${escapeHtml(q)}</span>
+        </p>
+        <div class="mh-toggle-4">
+          ${Q9_OPTIONS.map(opt => `
+            <label data-val="${opt.val}">
+              <input type="radio" name="q9_${i}" value="${opt.val}">
+              <span>${opt.label}</span>
+            </label>
+          `).join('')}
+        </div>
+      </div>
+    `).join('');
+
+    if (!q9List.dataset.bound) {
+      q9List.addEventListener('change', (e) => {
+        if (e.target.name && e.target.name.startsWith('q9_')) onQ9Change(e);
+      });
+      q9List.dataset.bound = '1';
+    }
+  }
+
+  // ===== 8Q =====
+  if (q8List) {
+    q8List.innerHTML = Q8_QUESTIONS.map((q, i) => `
+      ${q.note ? `<p class="text-xs text-amber-600 font-medium mt-2 mb-1 px-1">${escapeHtml(q.note)}</p>` : ''}
+      <div class="mh-question" data-q8="${i}">
+        <p class="mh-question-text">
+          <span class="qnum">${i + 1}.</span><span>${escapeHtml(q.text)}</span>
+        </p>
+        <div class="mh-toggle">
+          <label data-val="0">
+            <input type="radio" name="q8_${i}" value="0" data-score="${q.no}">
+            <span>ไม่มี</span>
+          </label>
+          <label data-val="1">
+            <input type="radio" name="q8_${i}" value="1" data-score="${q.yes}">
+            <span>มี (${q.yes})</span>
+          </label>
+        </div>
+      </div>
+    `).join('');
+
+    if (!q8List.dataset.bound) {
+      q8List.addEventListener('change', (e) => {
+        if (e.target.name && e.target.name.startsWith('q8_')) onQ8Change(e);
+      });
+      q8List.dataset.bound = '1';
+    }
+  }
+
+  if (window.lucide) lucide.createIcons();
+  return true;
+}
 
 function onQ2Change(e) {
   const idx = e.target.name.replace('q2_', '');
