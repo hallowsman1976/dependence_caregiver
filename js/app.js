@@ -1506,13 +1506,15 @@ function toggleMentalHealthAssessment() {
     assessmentBlock.classList.remove('hidden');
     skippedNotice.classList.add('hidden');
     hint.textContent = 'กำลังประเมิน — ตอบคำถามด้านล่าง';
+
+    // ⭐ Force render คำถาม - กรณีที่ยังไม่ถูก render
+    // (ถ้า render แล้วจะ skip อัตโนมัติเพราะมี data-rendered flag)
+    renderMentalHealthQuestions();
   } else {
     masterToggle.classList.remove('is-active');
     assessmentBlock.classList.add('hidden');
     skippedNotice.classList.remove('hidden');
     hint.textContent = 'เปิดเพื่อทำแบบประเมิน 2Q / 9Q / 8Q';
-
-    // เคลียร์คำตอบทั้งหมดเมื่อปิด
     clearAllMentalHealth();
   }
 
