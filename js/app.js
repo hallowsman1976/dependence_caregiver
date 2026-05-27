@@ -1507,9 +1507,21 @@ function toggleMentalHealthAssessment() {
     skippedNotice.classList.add('hidden');
     hint.textContent = 'กำลังประเมิน — ตอบคำถามด้านล่าง';
 
-    // ⭐ Force render คำถาม - กรณีที่ยังไม่ถูก render
-    // (ถ้า render แล้วจะ skip อัตโนมัติเพราะมี data-rendered flag)
-    renderMentalHealthQuestions();
+    // ⭐ Render หลัง show แล้ว (DOM พร้อมรับ paint)
+    setTimeout(() => {
+      // ตรวจว่าเคย render หรือยัง
+      const q2List = document.getElementById('q2List');
+      if (q2List && !q2List.innerHTML.trim()) {
+        // ลบ flag แล้ว render ใหม่
+        delete q2List.dataset.rendered;
+        const q9 = document.getElementById('q9List');
+        const q8 = document.getElementById('q8List');
+        if (q9) delete q9.dataset.rendered;
+        if (q8) delete q8.dataset.rendered;
+        renderMentalHealthQuestions();
+      }
+      if (window.lucide) lucide.createIcons();
+    }, 50);
   } else {
     masterToggle.classList.remove('is-active');
     assessmentBlock.classList.add('hidden');
@@ -1517,8 +1529,6 @@ function toggleMentalHealthAssessment() {
     hint.textContent = 'เปิดเพื่อทำแบบประเมิน 2Q / 9Q / 8Q';
     clearAllMentalHealth();
   }
-
-  if (window.lucide) lucide.createIcons();
 }
 
 function renderMentalHealthQuestions() {
@@ -1536,29 +1546,35 @@ function renderMentalHealthQuestions() {
   }
 
   // ===== 2Q =====
-  if (q2List && !q2List.dataset.rendered) {
-    q2List.innerHTML = Q2_QUESTIONS.map((q, i) => `
-      <div class="mh-question" data-q2="${i}">
-        <p class="mh-question-text">
-          <span class="qnum">${i + 1}.</span><span>${escapeHtml(q)}</span>
-        </p>
-        <div class="mh-toggle">
-          <label data-val="0">
-            <input type="radio" name="q2_${i}" value="0">
-            <span>ไม่มี</span>
-          </label>
-          <label data-val="1">
-            <input type="radio" name="q2_${i}" value="1">
-            <span>มี</span>
-          </label>
-        </div>
+// ===== 2Q =====
+if (q2List) {
+  // Render ใหม่ทุกครั้ง (idempotent)
+  q2List.innerHTML = Q2_QUESTIONS.map((q, i) => `
+    <div class="mh-question" data-q2="${i}">
+      <p class="mh-question-text">
+        <span class="qnum">${i + 1}.</span><span>${escapeHtml(q)}</span>
+      </p>
+      <div class="mh-toggle">
+        <label data-val="0">
+          <input type="radio" name="q2_${i}" value="0">
+          <span>ไม่มี</span>
+        </label>
+        <label data-val="1">
+          <input type="radio" name="q2_${i}" value="1">
+          <span>มี</span>
+        </label>
       </div>
-    `).join('');
-    q2List.dataset.rendered = '1';
+    </div>
+  `).join('');
+
+  // Bind event ครั้งเดียว (ตรวจด้วย flag)
+  if (!q2List.dataset.bound) {
     q2List.addEventListener('change', (e) => {
       if (e.target.name && e.target.name.startsWith('q2_')) onQ2Change(e);
     });
+    q2List.dataset.bound = '1';
   }
+}
 
   // ===== 9Q =====
   if (q9List && !q9List.dataset.rendered) {
