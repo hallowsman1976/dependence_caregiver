@@ -1297,10 +1297,43 @@ a:focus-visible {
   }
 }
 /* =====================================================
-   Mental Health Questions (2Q / 9Q / 8Q)
+   Mental Health - Master Toggle
    ===================================================== */
+.mh-master-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  background: linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  margin-bottom: 1rem;
+  transition: all 0.25s ease;
+}
 
-/* คำถาม Card */
+.mh-master-toggle.is-active {
+  background: linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%);
+  border-color: var(--color-primary);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.12);
+}
+
+.mh-master-toggle.is-active .w-9.h-9 {
+  background: var(--color-primary) !important;
+  color: white !important;
+}
+
+#mhAssessmentBlock {
+  animation: fadeSlide 0.3s ease-out;
+}
+
+#mhSkippedNotice {
+  animation: fadeSlide 0.3s ease-out;
+}
+
+
+/* =====================================================
+   Mental Health - Questions (2Q / 9Q / 8Q)
+   ===================================================== */
 .mh-question {
   background: white;
   border: 1.5px solid var(--color-border);
@@ -1335,7 +1368,10 @@ a:focus-visible {
   min-width: 22px;
 }
 
-/* Toggle Switch แบบ 2 ตัวเลือก (มี/ไม่มี) */
+
+/* =====================================================
+   Mental Health - Toggle Switch (2 options: ไม่มี/มี)
+   ===================================================== */
 .mh-toggle {
   display: flex;
   gap: 0;
@@ -1360,9 +1396,13 @@ a:focus-visible {
   min-height: 38px;
 }
 
-.mh-toggle label input[type="radio"] { display: none; }
+.mh-toggle label input[type="radio"] {
+  display: none;
+}
 
-.mh-toggle label:hover { color: var(--color-text); }
+.mh-toggle label:hover {
+  color: var(--color-text);
+}
 
 .mh-toggle label.is-selected {
   background: white;
@@ -1375,12 +1415,16 @@ a:focus-visible {
   background: #DCFCE7;
   color: #166534;
 }
+
 .mh-toggle label.is-selected.yes-option {
   background: #FEE2E2;
   color: #B91C1C;
 }
 
-/* Toggle 4 ตัวเลือก (9Q) */
+
+/* =====================================================
+   Mental Health - Toggle 4 options (9Q score)
+   ===================================================== */
 .mh-toggle-4 {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -1406,8 +1450,13 @@ a:focus-visible {
   text-align: center;
 }
 
-.mh-toggle-4 label input[type="radio"] { display: none; }
-.mh-toggle-4 label:hover { color: var(--color-text); }
+.mh-toggle-4 label input[type="radio"] {
+  display: none;
+}
+
+.mh-toggle-4 label:hover {
+  color: var(--color-text);
+}
 
 .mh-toggle-4 label.is-selected {
   background: white;
@@ -1416,13 +1465,60 @@ a:focus-visible {
   font-weight: 600;
 }
 
-.mh-toggle-4 label[data-val="0"].is-selected { background: #DCFCE7; color: #166534; }
-.mh-toggle-4 label[data-val="1"].is-selected { background: #DBEAFE; color: #1E40AF; }
-.mh-toggle-4 label[data-val="2"].is-selected { background: #FEF3C7; color: #92400E; }
-.mh-toggle-4 label[data-val="3"].is-selected { background: #FEE2E2; color: #991B1B; }
+.mh-toggle-4 label[data-val="0"].is-selected {
+  background: #DCFCE7;
+  color: #166534;
+}
 
-/* Result badges */
-.mh-result-normal  { background: #DCFCE7; color: #166534; }
-.mh-result-mild    { background: #DBEAFE; color: #1E40AF; }
-.mh-result-medium  { background: #FEF3C7; color: #92400E; }
-.mh-result-severe  { background: #FEE2E2; color: #991B1B; border: 2px solid #FCA5A5; }
+.mh-toggle-4 label[data-val="1"].is-selected {
+  background: #DBEAFE;
+  color: #1E40AF;
+}
+
+.mh-toggle-4 label[data-val="2"].is-selected {
+  background: #FEF3C7;
+  color: #92400E;
+}
+
+.mh-toggle-4 label[data-val="3"].is-selected {
+  background: #FEE2E2;
+  color: #991B1B;
+}
+
+
+/* =====================================================
+   Mental Health - Result Badges
+   ===================================================== */
+.mh-result-normal {
+  background: #DCFCE7;
+  color: #166534;
+}
+
+.mh-result-mild {
+  background: #DBEAFE;
+  color: #1E40AF;
+}
+
+.mh-result-medium {
+  background: #FEF3C7;
+  color: #92400E;
+}
+
+.mh-result-severe {
+  background: #FEE2E2;
+  color: #991B1B;
+  border: 2px solid #FCA5A5;
+}
+
+
+/* =====================================================
+   Mental Health - 8Q Badge Pulse Animation
+   ===================================================== */
+#cr8qBadge {
+  animation: pulseBadge 1.5s ease-in-out infinite;
+}
+
+@keyframes pulseBadge {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.05); }
+}
