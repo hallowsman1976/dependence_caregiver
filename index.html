@@ -1,1020 +1,1086 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Phase 5 — Polish Showcase</title>
-<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&family=Mitr:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/lucide@latest"></script>
-
-<style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-
-body {
-  font-family: 'Sarabun', sans-serif;
-  background: linear-gradient(135deg, #0F172A, #1E293B);
-  color: #0F172A;
-  min-height: 100vh;
-}
-
-.intro {
-  text-align: center;
-  padding: 40px 24px 32px;
-  color: white;
-}
-
-.intro h1 {
-  font-family: 'Mitr', sans-serif;
-  font-size: 32px;
-  margin-bottom: 12px;
-}
-
-.intro p {
-  opacity: 0.75;
-  font-size: 15px;
-  max-width: 600px;
-  margin: 0 auto 20px;
-  line-height: 1.6;
-}
-
-.intro .pills {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-  flex-wrap: wrap;
-  max-width: 700px;
-  margin: 0 auto;
-}
-
-.intro .pill {
-  padding: 6px 14px;
-  background: rgba(255,255,255,0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.15);
-  border-radius: 999px;
-  font-size: 12px;
-}
-
-.demo-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 24px 40px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-}
-
-@media (max-width: 900px) {
-  .demo-container { grid-template-columns: 1fr; }
-}
-
-.demo-card {
-  background: white;
-  border-radius: 20px;
-  overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-}
-
-.demo-card-header {
-  background: linear-gradient(135deg, #0C4A6E, #0369A1);
-  color: white;
-  padding: 16px 20px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.demo-card-header [data-lucide] {
-  width: 22px; height: 22px;
-}
-
-.demo-card-title {
-  font-family: 'Mitr', sans-serif;
-  font-weight: 600;
-  font-size: 16px;
-  flex: 1;
-}
-
-.demo-card-body {
-  padding: 24px;
-}
-
-.demo-section {
-  margin-bottom: 20px;
-}
-
-.demo-section:last-child { margin-bottom: 0; }
-
-.demo-section h3 {
-  font-family: 'Mitr', sans-serif;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--v2-ink-600);
-  margin-bottom: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.btn-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-[data-lucide] { width: 20px; height: 20px; stroke-width: 2; }
-.hidden { display: none !important; }
-
-/* =====================================================
-   v2 Tokens
-   ===================================================== */
-:root {
-  --v2-primary-900: #0C4A6E;
-  --v2-primary-700: #0369A1;
-  --v2-primary-600: #0284C7;
-  --v2-primary-500: #0EA5E9;
-  --v2-primary-200: #BAE6FD;
-  --v2-primary-100: #E0F2FE;
-  --v2-primary-50: #F0F9FF;
-  --v2-surface-0: #FFFFFF;
-  --v2-surface-50: #F8FAFC;
-  --v2-surface-100: #F1F5F9;
-  --v2-surface-200: #E2E8F0;
-  --v2-surface-300: #CBD5E1;
-  --v2-ink-900: #0F172A;
-  --v2-ink-700: #334155;
-  --v2-ink-600: #475569;
-  --v2-ink-500: #64748B;
-  --v2-ink-400: #94A3B8;
-  --v2-amber-600: #D97706;
-  --v2-amber-50: #FFFBEB;
-  --v2-emerald-600: #059669;
-  --v2-emerald-100: #D1FAE5;
-  --v2-emerald-50: #ECFDF5;
-  --v2-rose-600: #E11D48;
-  --v2-rose-50: #FFF1F2;
-}
-
-/* Buttons */
-.v2-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 10px 18px;
-  font-family: 'Sarabun', sans-serif;
-  font-weight: 600;
-  font-size: 14px;
-  border: none;
-  border-radius: 12px;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-  transition: all 0.15s;
-}
-
-.v2-btn [data-lucide] { width: 18px; height: 18px; }
-
-.v2-btn-primary {
-  background: var(--v2-primary-600);
-  color: white;
-  box-shadow: 0 2px 4px rgba(2,132,199,0.2);
-}
-
-.v2-btn-primary:hover {
-  background: var(--v2-primary-700);
-  transform: translateY(-1px);
-}
-
-.v2-btn-primary::before {
-  content: '';
-  position: absolute;
-  top: 0; left: -100%;
-  width: 100%; height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-  transition: left 0.5s ease;
-}
-
-.v2-btn-primary:hover::before { left: 100%; }
-
-.v2-btn:active { transform: scale(0.96) !important; transition: transform 0.08s; }
-
-.v2-btn-ghost {
-  background: transparent;
-  color: var(--v2-ink-700);
-  border: 1.5px solid var(--v2-surface-200);
-}
-
-.v2-btn-ghost:hover {
-  background: var(--v2-surface-100);
-}
-
-.v2-btn-success {
-  background: var(--v2-emerald-600);
-  color: white;
-}
-
-.v2-btn-danger {
-  background: var(--v2-rose-600);
-  color: white;
-}
-
-.v2-btn-warning {
-  background: var(--v2-amber-600);
-  color: white;
-}
-
-/* Ripple */
-.v2-ripple {
-  position: absolute;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.4);
-  transform: scale(0);
-  animation: v2-ripple-out 0.6s ease-out;
-  pointer-events: none;
-}
-
-@keyframes v2-ripple-out {
-  to { transform: scale(4); opacity: 0; }
-}
-
-/* Skeleton */
-.v2-skeleton {
-  background: linear-gradient(90deg, var(--v2-surface-100) 0%, var(--v2-surface-200) 50%, var(--v2-surface-100) 100%);
-  background-size: 200% 100%;
-  animation: v2-shimmer 1.5s ease-in-out infinite;
-  border-radius: 8px;
-  display: block;
-}
-
-@keyframes v2-shimmer {
-  0%   { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-
-.v2-skeleton.is-text { height: 14px; margin-bottom: 8px; }
-.v2-skeleton.is-title { height: 20px; width: 60%; margin-bottom: 12px; }
-.v2-skeleton.is-line { height: 12px; margin-bottom: 6px; }
-.v2-skeleton.is-square { width: 48px; height: 48px; border-radius: 14px; }
-.v2-skeleton.is-button { height: 36px; width: 100px; border-radius: 10px; }
-.w-75 { width: 75%; }
-.w-50 { width: 50%; }
-
-.v2-skeleton-patient-card {
-  background: white;
-  border: 1px solid var(--v2-surface-200);
-  border-radius: 16px;
-  padding: 16px;
-  margin-bottom: 12px;
-  display: flex;
-  gap: 12px;
-}
-
-/* Toast */
-.v2-toast {
-  position: fixed;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%) translateY(-120%);
-  z-index: 10000;
-  min-width: 280px;
-  max-width: 90vw;
-  padding: 14px 20px;
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 12px 32px rgba(15,23,42,0.15);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 14px;
-  font-family: 'Sarabun', sans-serif;
-  border-left: 4px solid var(--v2-primary-600);
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.v2-toast.is-visible {
-  transform: translateX(-50%) translateY(0);
-}
-
-.v2-toast.is-success { border-left-color: var(--v2-emerald-600); }
-.v2-toast.is-error { border-left-color: var(--v2-rose-600); }
-.v2-toast.is-warning { border-left-color: var(--v2-amber-600); }
-
-.v2-toast-icon {
-  width: 28px; height: 28px;
-  border-radius: 8px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--v2-primary-100);
-  color: var(--v2-primary-700);
-}
-
-.v2-toast.is-success .v2-toast-icon { background: var(--v2-emerald-50); color: var(--v2-emerald-600); }
-.v2-toast.is-error .v2-toast-icon { background: var(--v2-rose-50); color: var(--v2-rose-600); }
-.v2-toast.is-warning .v2-toast-icon { background: var(--v2-amber-50); color: var(--v2-amber-600); }
-
-.v2-toast-icon [data-lucide] { width: 16px; height: 16px; }
-
-.v2-toast-text { flex: 1; font-weight: 500; color: var(--v2-ink-900); }
-
-/* Celebration */
-.v2-celebration-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(15, 23, 42, 0.4);
-  backdrop-filter: blur(4px);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s;
-}
-
-.v2-celebration-overlay.is-visible {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.v2-celebration-card {
-  background: white;
-  border-radius: 24px;
-  padding: 48px 32px;
-  text-align: center;
-  box-shadow: 0 24px 64px rgba(15,23,42,0.2);
-  transform: scale(0.85);
-  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  max-width: 90vw;
-  width: 320px;
-}
-
-.v2-celebration-overlay.is-visible .v2-celebration-card { transform: scale(1); }
-
-.v2-celebration-icon {
-  width: 80px; height: 80px;
-  margin: 0 auto 16px;
-  border-radius: 50%;
-  background: var(--v2-emerald-100);
-  color: var(--v2-emerald-600);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-}
-
-.v2-celebration-icon::before,
-.v2-celebration-icon::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  border: 2px solid var(--v2-emerald-600);
-  opacity: 0;
-  animation: celebrate-ring 1.5s ease-out infinite;
-}
-
-.v2-celebration-icon::after { animation-delay: 0.5s; }
-
-@keyframes celebrate-ring {
-  0% { transform: scale(0.9); opacity: 0.6; }
-  100% { transform: scale(1.8); opacity: 0; }
-}
-
-.v2-celebration-icon [data-lucide] {
-  width: 40px; height: 40px;
-  animation: check-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s backwards;
-}
-
-@keyframes check-pop {
-  from { transform: scale(0); }
-  to { transform: scale(1); }
-}
-
-.v2-celebration-title {
-  font-family: 'Mitr', sans-serif;
-  font-size: 22px;
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-
-.v2-celebration-message {
-  font-size: 14px;
-  color: var(--v2-ink-600);
-  line-height: 1.5;
-}
-
-/* Stagger demo */
-.demo-stagger-item {
-  background: white;
-  border: 1px solid var(--v2-surface-200);
-  border-radius: 12px;
-  padding: 14px 16px;
-  margin-bottom: 8px;
-  font-family: 'Mitr', sans-serif;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.v2-stagger > * {
-  opacity: 0;
-  animation: v2-stagger-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.v2-stagger > *:nth-child(1) { animation-delay: 0.05s; }
-.v2-stagger > *:nth-child(2) { animation-delay: 0.10s; }
-.v2-stagger > *:nth-child(3) { animation-delay: 0.15s; }
-.v2-stagger > *:nth-child(4) { animation-delay: 0.20s; }
-.v2-stagger > *:nth-child(5) { animation-delay: 0.25s; }
-
-@keyframes v2-stagger-in {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Stat box */
-.demo-stat {
-  background: white;
-  border: 1px solid var(--v2-surface-200);
-  border-radius: 16px;
-  padding: 20px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.demo-stat:hover {
-  border-color: var(--v2-primary-200);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(15,23,42,0.08);
-}
-
-.demo-stat-value {
-  font-family: 'Mitr', sans-serif;
-  font-size: 36px;
-  font-weight: 700;
-  color: var(--v2-primary-600);
-  margin-bottom: 4px;
-  display: inline-block;
-  transition: color 0.3s;
-}
-
-.demo-stat-value.is-updating {
-  animation: number-bounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-@keyframes number-bounce {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.15); }
-  100% { transform: scale(1); }
-}
-
-.demo-stat-label {
-  font-size: 13px;
-  color: var(--v2-ink-500);
-  font-weight: 500;
-}
-
-/* Toggle Switch */
-.v2-toggle-switch {
-  position: relative;
-  width: 48px;
-  height: 28px;
-  flex-shrink: 0;
-  cursor: pointer;
-  display: inline-block;
-}
-
-.v2-toggle-switch input { position: absolute; opacity: 0; }
-
-.v2-toggle-slider {
-  position: absolute;
-  inset: 0;
-  background: var(--v2-surface-300);
-  border-radius: 999px;
-  transition: background 0.25s;
-}
-
-.v2-toggle-slider::after {
-  content: '';
-  position: absolute;
-  width: 22px; height: 22px;
-  background: white;
-  border-radius: 50%;
-  top: 3px; left: 3px;
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
-}
-
-.v2-toggle-switch input:checked + .v2-toggle-slider {
-  background: var(--v2-primary-600);
-}
-
-.v2-toggle-switch input:checked + .v2-toggle-slider::after {
-  transform: translateX(20px);
-}
-
-/* Input */
-.v2-input {
-  width: 100%;
-  padding: 10px 14px;
-  background: var(--v2-surface-50);
-  border: 1.5px solid var(--v2-surface-200);
-  border-radius: 8px;
-  font-size: 14px;
-  font-family: 'Sarabun', sans-serif;
-  transition: all 0.15s;
-}
-
-.v2-input:focus {
-  outline: none;
-  background: white;
-  border-color: var(--v2-primary-500);
-  animation: focus-pulse 0.4s ease-out;
-}
-
-@keyframes focus-pulse {
-  0% { box-shadow: 0 0 0 0 rgba(14,165,233,0.4); }
-  100% { box-shadow: 0 0 0 3px rgba(14,165,233,0.1); }
-}
-
-/* Empty state with float */
-.empty-demo {
-  text-align: center;
-  padding: 32px;
-  background: white;
-  border: 1px solid var(--v2-surface-200);
-  border-radius: 16px;
-}
-
-.empty-illustration {
-  width: 80px; height: 80px;
-  margin: 0 auto 12px;
-  border-radius: 24px;
-  background: linear-gradient(135deg, var(--v2-surface-100), var(--v2-surface-50));
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--v2-ink-400);
-  animation: float 4s ease-in-out infinite;
-}
-
-.empty-illustration [data-lucide] { width: 40px; height: 40px; stroke-width: 1.5; }
-
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
-}
-
-.empty-title {
-  font-family: 'Mitr', sans-serif;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--v2-ink-700);
-}
-
-/* Step dot with shine */
-.demo-step-dot {
-  flex: 1;
-  height: 8px;
-  background: var(--v2-primary-600);
-  border-radius: 4px;
-  position: relative;
-  overflow: hidden;
-}
-
-.demo-step-dot::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
-  animation: progress-shine 2s linear infinite;
-}
-
-@keyframes progress-shine {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(100%); }
-}
-
-.demo-progress-row {
-  display: flex;
-  gap: 4px;
-  margin-top: 8px;
-}
-
-.demo-progress-row > div:not(.demo-step-dot) {
-  flex: 1;
-  height: 6px;
-  background: var(--v2-surface-200);
-  border-radius: 3px;
-}
-
-.demo-progress-row > .done {
-  background: var(--v2-emerald-600);
-}
-
-</style>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0ea5e9">
+  <title>ระบบดูแลผู้มีภาวะพึ่งพิง</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts: Mitr -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- SweetAlert2 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+  <!-- Signature Pad -->
+  <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+  <!-- Flatpickr -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+
+  <!-- Tailwind Config -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Mitr','system-ui','sans-serif'] },
+          colors: {
+            brand: {
+              50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 300: '#7dd3fc',
+              400: '#38bdf8', 500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1',
+              800: '#075985', 900: '#0c4a6e'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <link rel="stylesheet" href="./css/style.css">
 </head>
-<body>
 
-<div class="intro">
-  <h1>✨ Phase 5 — Polish Showcase</h1>
-  <p>Microinteractions, Skeleton Loaders, Toast, Celebration, และ Animations ที่ทำให้ระบบรู้สึก premium</p>
-  <div class="pills">
-    <span class="pill">💀 Skeleton</span>
-    <span class="pill">🎉 Celebration</span>
-    <span class="pill">🍞 Toast</span>
-    <span class="pill">💧 Ripple</span>
-    <span class="pill">⚡ Animations</span>
-    <span class="pill">🎨 Microinteractions</span>
-  </div>
-</div>
+<body class="font-sans bg-slate-50 text-slate-800 antialiased">
 
-<div class="demo-container">
-
-  <!-- Card 1: Buttons -->
-  <div class="demo-card">
-    <div class="demo-card-header">
-      <i data-lucide="mouse-pointer-click"></i>
-      <div class="demo-card-title">Button Microinteractions</div>
+  <!-- ==================================================== -->
+  <!-- LOADING OVERLAY                                       -->
+  <!-- ==================================================== -->
+  <div id="loadingOverlay" class="fixed inset-0 z-[9999] hidden bg-white/70 backdrop-blur-sm">
+    <div class="absolute inset-0 flex flex-col items-center justify-center gap-3">
+      <div class="w-14 h-14 border-4 border-brand-200 border-t-brand-600 rounded-full animate-spin"></div>
+      <p id="loadingText" class="text-brand-700 font-medium">กำลังโหลด...</p>
     </div>
-    <div class="demo-card-body">
+  </div>
 
-      <div class="demo-section">
-        <h3>Click → Ripple + Press</h3>
-        <div class="btn-row">
-          <button class="v2-btn v2-btn-primary"><i data-lucide="save"></i> บันทึก</button>
-          <button class="v2-btn v2-btn-ghost"><i data-lucide="arrow-left"></i> ย้อนกลับ</button>
-          <button class="v2-btn v2-btn-danger"><i data-lucide="trash-2"></i> ลบ</button>
-          <button class="v2-btn v2-btn-success"><i data-lucide="check"></i> ยืนยัน</button>
+  <!-- ==================================================== -->
+  <!-- LOGIN PAGE                                            -->
+  <!-- ==================================================== -->
+  <section id="loginPage"
+    class="min-h-screen flex flex-col items-center justify-center px-6 py-10 bg-gradient-to-br from-brand-500 via-brand-600 to-brand-800">
+    <div class="w-full max-w-md">
+      <!-- Logo & Title -->
+      <div class="text-center mb-8 text-white">
+        <div
+          class="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-white/15 backdrop-blur-sm mb-4 shadow-lg">
+          <i data-lucide="heart-pulse" class="w-10 h-10 text-white"></i>
         </div>
+        <h1 class="text-2xl font-semibold leading-tight">ระบบดูแลผู้มีภาวะพึ่งพิง</h1>
+        <p class="text-white/80 text-sm mt-1">Dependent Care System</p>
       </div>
 
-      <div class="demo-section">
-        <h3>Hover → Shine + Lift</h3>
-        <button class="v2-btn v2-btn-primary" style="width: 100%; padding: 14px;">
-          <i data-lucide="zap"></i> Hover ที่ปุ่มนี้ดูแสงวิ่ง
+      <!-- Login Card -->
+      <div class="bg-white rounded-3xl shadow-2xl p-7">
+        <h2 class="text-lg font-semibold text-slate-800 mb-1">เข้าสู่ระบบ</h2>
+        <p class="text-sm text-slate-500 mb-6">กรุณาเข้าสู่ระบบเพื่อใช้งาน</p>
+
+        <form id="loginForm" class="space-y-4" autocomplete="off">
+          <!-- Username -->
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1.5">ชื่อผู้ใช้</label>
+            <div class="relative">
+              <i data-lucide="user" class="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+              <input id="loginUsername" type="text" required
+              class="input-field pl-11" placeholder="กรอกชื่อผู้ใช้">
+            </div>
+          </div>
+
+          <!-- Password -->
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1.5">รหัสผ่าน</label>
+            <div class="relative">
+              <i data-lucide="lock" class="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+              <input id="loginPassword" type="password" required
+              class="input-field pl-11 pr-11" placeholder="กรอกรหัสผ่าน">
+              <button type="button" id="togglePwd"
+              class="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-slate-400 hover:text-brand-600">
+              <i data-lucide="eye" class="w-5 h-5"></i>
+            </button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-primary w-full mt-2">
+          <i data-lucide="log-in" class="w-5 h-5"></i>
+          เข้าสู่ระบบ
         </button>
+        </form>
+
+        <p class="text-center text-xs text-slate-400 mt-6">v1.0.0 © Community Health</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================================================== -->
+  <!-- APP SHELL (หลัง Login)                                -->
+  <!-- ==================================================== -->
+  <div id="appShell" class="hidden min-h-screen">
+
+    <!-- =============== TOP HEADER (Mobile + Desktop) =============== -->
+    <header class="sticky top-0 z-40 bg-white border-b border-slate-200">
+      <div class="flex items-center justify-between px-4 h-14 lg:pl-72">
+        <div class="flex items-center gap-3 min-w-0">
+          <button id="sidebarToggle" class="lg:hidden p-2 -ml-2 rounded-lg hover:bg-slate-100">
+          <i data-lucide="menu" class="w-6 h-6"></i>
+        </button>
+          <div class="min-w-0">
+            <h1 id="pageTitle" class="text-base font-semibold text-slate-800 truncate">หน้าหลัก</h1>
+            <p id="pageSubtitle" class="text-xs text-slate-500 truncate">ระบบดูแลผู้มีภาวะพึ่งพิง</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-50 text-brand-700 text-sm">
+            <i data-lucide="user-circle" class="w-4 h-4"></i>
+            <span id="topUserName">-</span>
+          </div>
+          <button id="topLogoutBtn" title="ออกจากระบบ"
+          class="p-2 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50">
+          <i data-lucide="log-out" class="w-5 h-5"></i>
+        </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- =============== SIDEBAR (Desktop) / DRAWER (Mobile) =============== -->
+    <aside id="sidebar"
+      class="fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-slate-200 transform -translate-x-full lg:translate-x-0 transition-transform duration-300">
+      <div class="flex items-center gap-3 px-5 h-16 border-b border-slate-100">
+        <div class="w-10 h-10 rounded-xl bg-brand-600 flex items-center justify-center">
+          <i data-lucide="heart-pulse" class="w-6 h-6 text-white"></i>
+        </div>
+        <div class="min-w-0">
+          <h2 class="font-semibold text-slate-800 text-sm leading-tight">ระบบดูแล</h2>
+          <p class="text-xs text-slate-500 truncate">ผู้มีภาวะพึ่งพิง</p>
+        </div>
+        <button id="sidebarClose" class="lg:hidden ml-auto p-2 rounded-lg hover:bg-slate-100">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
       </div>
 
-    </div>
-  </div>
-
-  <!-- Card 2: Toast -->
-  <div class="demo-card">
-    <div class="demo-card-header">
-      <i data-lucide="bell"></i>
-      <div class="demo-card-title">Toast Notifications</div>
-    </div>
-    <div class="demo-card-body">
-
-      <div class="demo-section">
-        <h3>คลิกเพื่อทดสอบ</h3>
-        <div class="btn-row">
-          <button class="v2-btn v2-btn-success" onclick="showToast('success', 'บันทึกสำเร็จ')">
-            <i data-lucide="check-circle-2"></i> Success
-          </button>
-          <button class="v2-btn v2-btn-danger" onclick="showToast('error', 'เกิดข้อผิดพลาด')">
-            <i data-lucide="x-circle"></i> Error
-          </button>
-          <button class="v2-btn v2-btn-warning" onclick="showToast('warning', 'กรุณาตรวจสอบ')">
-            <i data-lucide="alert-triangle"></i> Warning
-          </button>
-          <button class="v2-btn v2-btn-primary" onclick="showToast('info', 'Tip: กดที่ปุ่ม')">
-            <i data-lucide="info"></i> Info
-          </button>
+      <!-- User Card -->
+      <div class="p-4">
+        <div class="flex items-center gap-3 p-3 rounded-2xl bg-gradient-to-r from-brand-50 to-brand-100">
+          <div class="w-11 h-11 rounded-full bg-white flex items-center justify-center text-brand-600">
+            <i data-lucide="user" class="w-5 h-5"></i>
+          </div>
+          <div class="min-w-0 flex-1">
+            <p id="sideUserName" class="text-sm font-medium text-slate-800 truncate">-</p>
+            <p id="sideUserRole" class="text-xs text-brand-600">-</p>
+          </div>
         </div>
       </div>
 
+      <!-- Menu -->
+      <nav class="px-3 pb-24 lg:pb-4 overflow-y-auto h-[calc(100vh-12rem)]">
+        <p class="px-3 text-[11px] uppercase tracking-wider text-slate-400 mb-2">เมนูหลัก</p>
+        <ul id="menuList" class="space-y-1">
+          <!-- จะถูก render จาก js.html ตาม role -->
+        </ul>
+      </nav>
+    </aside>
+    <div id="sidebarBackdrop" class="fixed inset-0 bg-black/40 z-40 hidden lg:hidden"></div>
+
+    <!-- =============== MAIN CONTENT =============== -->
+    <main class="lg:pl-72 pb-24 lg:pb-8">
+
+      <!-- ============= PAGE: DASHBOARD ============= -->
+      <section data-page="dashboard" class="page p-4 sm:p-6 max-w-7xl mx-auto">
+        <h2 class="text-xl font-semibold text-slate-800 mb-4">ภาพรวมระบบ</h2>
+        <div id="dashboardCards" class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <!-- Render จาก js.html -->
+        </div>
+
+        <div class="mt-6 bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+          <h3 class="font-semibold text-slate-800 mb-3 flex items-center gap-2">
+            <i data-lucide="info" class="w-5 h-5 text-brand-600"></i>
+            คำแนะนำการใช้งาน
+          </h3>
+          <p id="dashboardHint" class="text-sm text-slate-600 leading-relaxed">
+            เลือกเมนูจากแถบด้านข้างเพื่อเริ่มใช้งานระบบ
+          </p>
+        </div>
+      </section>
+
+      <!-- ============= PAGE: CAREGIVER ============= -->
+      <section data-page="caregivers" class="page hidden p-4 sm:p-6 max-w-7xl mx-auto">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-semibold text-slate-800">ผู้ดูแล (Care Giver)</h2>
+          <button id="btnAddCaregiver" class="btn-primary !py-2 !px-3 text-sm">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">เพิ่มผู้ดูแล</span>
+        </button>
+        </div>
+        <div class="mb-3">
+          <div class="relative">
+            <i data-lucide="search" class="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input id="searchCaregiver" type="text" placeholder="ค้นหารหัส/ชื่อ/เบอร์โทร" class="input-field pl-11">
+          </div>
+        </div>
+        <div id="caregiverList" class="space-y-3"></div>
+      </section>
+
+      <!-- ============= PAGE: PATIENT ============= -->
+      <section data-page="patients" class="page hidden p-4 sm:p-6 max-w-7xl mx-auto">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-semibold text-slate-800">ผู้มีภาวะพึ่งพิง</h2>
+          <button id="btnAddPatient" class="btn-primary !py-2 !px-3 text-sm">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">เพิ่มผู้ป่วย</span>
+        </button>
+        </div>
+        <div class="mb-3">
+          <div class="relative">
+            <i data-lucide="search" class="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input id="searchPatient" type="text" placeholder="ค้นหาเลขบัตร/ชื่อ/หมู่" class="input-field pl-11">
+          </div>
+        </div>
+        <div id="patientList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+      </section>
+
+      <!-- ============= PAGE: ASSIGNMENT ============= -->
+      <section data-page="assignments" class="page hidden p-4 sm:p-6 max-w-7xl mx-auto">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-semibold text-slate-800">มอบหมายการดูแล</h2>
+          <button id="btnAddAssignment" class="btn-primary !py-2 !px-3 text-sm">
+          <i data-lucide="user-plus" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">มอบหมายใหม่</span>
+        </button>
+        </div>
+        <div id="assignmentList" class="space-y-3"></div>
+      </section>
+
+      <!-- ============= PAGE: MY PATIENTS (member) ============= -->
+      <section data-page="myPatients" class="page hidden p-4 sm:p-6 max-w-7xl mx-auto">
+        <h2 class="text-xl font-semibold text-slate-800 mb-1">ผู้ที่ฉันดูแล</h2>
+        <p class="text-sm text-slate-500 mb-4">เลือกผู้ป่วยเพื่อบันทึกการดูแลหรือดูประวัติ</p>
+        <div class="mb-3">
+          <div class="relative">
+            <i data-lucide="search" class="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input id="searchMyPatient" type="text" placeholder="ค้นหาชื่อ/เลขบัตร" class="input-field pl-11">
+          </div>
+        </div>
+        <div id="myPatientList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+      </section>
+
+      <!-- ============= PAGE: REPORTS ============= -->
+      <section data-page="reports" class="page hidden p-4 sm:p-6 max-w-7xl mx-auto">
+        <h2 class="text-xl font-semibold text-slate-800 mb-4">รายงาน</h2>
+
+        <!-- Tabs -->
+        <div class="bg-white rounded-2xl border border-slate-100 p-1 inline-flex mb-4 shadow-sm">
+          <button data-rtab="daily"   class="report-tab tab-active">รายวัน</button>
+          <button data-rtab="monthly" class="report-tab">รายเดือน</button>
+        </div>
+
+        <!-- Daily Filter -->
+        <div id="dailyFilter" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 mb-4">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="text-xs text-slate-600 mb-1 block">วันที่</label>
+              <input id="reportDate" type="text" class="input-field" placeholder="วว/ดด/ปปปป" readonly>
+              <input id="reportDateISO" type="hidden">
+            </div>
+            <div>
+              <label class="text-xs text-slate-600 mb-1 block">ผู้ดูแล</label>
+              <select id="reportCgFilterDaily" class="input-field"><option value="">ทั้งหมด</option></select>
+            </div>
+            <div class="flex items-end gap-2">
+              <button id="btnLoadDaily" class="btn-primary flex-1">
+              <i data-lucide="search" class="w-4 h-4"></i>ค้นหา
+            </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Monthly Filter -->
+        <div id="monthlyFilter" class="hidden bg-white rounded-2xl shadow-sm border border-slate-100 p-4 mb-4">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div>
+              <label class="text-xs text-slate-600 mb-1 block">เดือน</label>
+              <select id="reportMonth" class="input-field"></select>
+            </div>
+            <div>
+              <label class="text-xs text-slate-600 mb-1 block">ปี (พ.ศ.)</label>
+              <select id="reportYear" class="input-field"></select>
+            </div>
+            <div>
+              <label class="text-xs text-slate-600 mb-1 block">ผู้ดูแล</label>
+              <select id="reportCgFilterMonthly" class="input-field"><option value="">ทั้งหมด</option></select>
+            </div>
+            <div class="flex items-end">
+              <button id="btnLoadMonthly" class="btn-primary w-full">
+              <i data-lucide="search" class="w-4 h-4"></i>ค้นหา
+            </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex gap-2 mb-3">
+          <button id="btnExportCsv" class="btn-secondary text-sm">
+          <i data-lucide="download" class="w-4 h-4"></i> Export CSV
+        </button>
+          <button id="btnPrintReport" class="btn-secondary text-sm">
+          <i data-lucide="printer" class="w-4 h-4"></i> พิมพ์
+        </button>
+        </div>
+
+        <!-- Summary Cards -->
+        <div id="reportSummary" class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4"></div>
+
+        <!-- Result Table -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm" id="reportTable">
+              <thead class="bg-slate-50 text-slate-600">
+                <tr>
+                  <th class="px-3 py-3 text-left">วันที่</th>
+                  <th class="px-3 py-3 text-left">เวลา</th>
+                  <th class="px-3 py-3 text-left">ผู้รับบริการ</th>
+                  <th class="px-3 py-3 text-left">ผู้ดูแล</th>
+                  <th class="px-3 py-3 text-left">2Q/9Q/8Q</th>
+                  <th class="px-3 py-3 text-left">หมายเหตุ</th>
+                </tr>
+              </thead>
+              <tbody id="reportTbody" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+          <div id="reportEmpty" class="text-center py-10 text-slate-400 hidden">
+            <i data-lucide="inbox" class="w-10 h-10 mx-auto mb-2"></i>
+            <p>ไม่พบข้อมูล</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============= PAGE: SETTINGS ============= -->
+      <section data-page="settings" class="page hidden p-4 sm:p-6 max-w-3xl mx-auto">
+        <h2 class="text-xl font-semibold text-slate-800 mb-1">ตั้งค่าระบบ</h2>
+        <p class="text-sm text-slate-500 mb-4">จัดการข้อมูลหน่วยงานและการเชื่อมต่อ Supabase</p>
+
+        <!-- Tabs -->
+        <div class="bg-white rounded-2xl border border-slate-100 p-1 inline-flex mb-4 shadow-sm overflow-x-auto">
+          <button data-stab="org"    class="settings-tab tab-active">ข้อมูลหน่วยงาน</button>
+          <button data-stab="config" class="settings-tab">Config ระบบ</button>
+          <button data-stab="status" class="settings-tab">สถานะระบบ</button>
+        </div>
+
+        <!-- ===== Tab 1: ข้อมูลหน่วยงาน (เดิม) ===== -->
+        <div id="settingsTabOrg" class="settings-panel">
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 space-y-4">
+            <div>
+              <label class="form-label">ชื่อหน่วยงาน</label>
+              <input id="setOrgName" class="input-field">
+            </div>
+            <div>
+              <label class="form-label">ชื่อรอง</label>
+              <input id="setOrgSubname" class="input-field">
+            </div>
+            <div>
+              <label class="form-label">ที่อยู่</label>
+              <textarea id="setOrgAddress" rows="2" class="input-field"></textarea>
+            </div>
+            <div>
+              <label class="form-label">เบอร์โทร</label>
+              <input id="setOrgPhone" class="input-field">
+            </div>
+            <div>
+              <label class="form-label">URL โลโก้</label>
+              <input id="setOrgLogo" class="input-field" placeholder="https://...">
+            </div>
+            <button id="btnSaveSettings" class="btn-primary w-full">
+        <i data-lucide="save" class="w-5 h-5"></i> บันทึกการตั้งค่า
+      </button>
+          </div>
+        </div>
+
+        <!-- ===== Tab 2: Config ระบบ (ใหม่) ===== -->
+        <div id="settingsTabConfig" class="settings-panel hidden">
+          <!-- Warning Banner -->
+          <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-4 flex items-start gap-3">
+            <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5"></i>
+            <div class="text-sm text-amber-900">
+              <p class="font-medium mb-1">ข้อควรระวัง</p>
+              <p class="text-amber-800">การแก้ไข Config นี้ส่งผลต่อทั้งระบบ กรุณาตรวจสอบให้แน่ใจก่อนบันทึก
+                ระบบจะเก็บค่าลง
+                Google Sheet โดยอัตโนมัติ</p>
+            </div>
+          </div>
+
+          <form id="configForm" class="space-y-4"></form>
+
+          <!-- Action Buttons -->
+          <div class="flex flex-col sm:flex-row gap-2 mt-4 sticky bottom-4">
+            <button type="button" id="btnTestConnection" class="btn-secondary flex-1">
+        <i data-lucide="plug-zap" class="w-4 h-4"></i> ทดสอบการเชื่อมต่อ
+      </button>
+            <button type="button" id="btnSaveConfig" class="btn-primary flex-1">
+        <i data-lucide="save" class="w-4 h-4"></i> บันทึก Config
+      </button>
+          </div>
+        </div>
+
+        <!-- ===== Tab 3: สถานะระบบ ===== -->
+        <div id="settingsTabStatus" class="settings-panel hidden">
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+            <h3 class="font-semibold text-slate-800 mb-3 flex items-center gap-2">
+              <i data-lucide="activity" class="w-5 h-5 text-brand-600"></i>
+              สถานะระบบ
+            </h3>
+            <div id="statusInfo" class="space-y-2 text-sm"></div>
+            <div class="flex gap-2 mt-4">
+              <button id="btnRefreshConfig" class="btn-secondary flex-1">
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i> รีเฟรช Cache
+        </button>
+              <a id="btnOpenConfigSheet" href="#" target="_blank" class="btn-secondary flex-1">
+                <i data-lucide="external-link" class="w-4 h-4"></i> เปิด Sheet ตรงๆ
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- =============== BOTTOM NAVIGATION (Mobile) =============== -->
+    <nav id="bottomNav"
+      class="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-slate-200 pb-[env(safe-area-inset-bottom)]">
+      <ul id="bottomNavList" class="grid grid-cols-4">
+        <!-- Render จาก js.html ตาม role -->
+      </ul>
+    </nav>
+  </div>
+
+
+  <!-- ==================================================== -->
+  <!-- MODAL: CAREGIVER (เพิ่ม/แก้ไข)                         -->
+  <!-- ==================================================== -->
+  <div id="caregiverModal" class="modal-root hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-panel">
+      <div class="modal-header">
+        <h3 id="caregiverModalTitle" class="text-lg font-semibold">เพิ่มผู้ดูแล</h3>
+        <button class="modal-close" data-close="caregiverModal">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+      </div>
+      <div class="modal-body space-y-3">
+        <input type="hidden" id="cgId">
+        <div>
+          <label class="form-label">รหัส CG</label>
+          <input id="cgCode" class="input-field bg-slate-50" readonly placeholder="สร้างอัตโนมัติ">
+        </div>
+        <div>
+          <label class="form-label">ชื่อ-สกุล <span class="text-red-500">*</span></label>
+          <input id="cgFullname" class="input-field" placeholder="ชื่อ นามสกุล">
+        </div>
+        <div>
+          <label class="form-label">เลขบัตรประชาชน 13 หลัก <span class="text-red-500">*</span></label>
+          <input id="cgCid" class="input-field" maxlength="13" inputmode="numeric" placeholder="0000000000000">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="form-label">บ้านเลขที่</label>
+            <input id="cgHouseNo" class="input-field">
+          </div>
+          <div>
+            <label class="form-label">หมู่</label>
+            <input id="cgMoo" class="input-field">
+          </div>
+        </div>
+        <div>
+          <label class="form-label">เบอร์โทร</label>
+          <input id="cgPhone" class="input-field" maxlength="10" inputmode="tel">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" data-close="caregiverModal">ยกเลิก</button>
+        <button id="btnSaveCaregiver" class="btn-primary">
+        <i data-lucide="save" class="w-4 h-4"></i> บันทึก
+      </button>
+      </div>
     </div>
   </div>
 
-  <!-- Card 3: Skeleton -->
-  <div class="demo-card">
-    <div class="demo-card-header">
-      <i data-lucide="loader"></i>
-      <div class="demo-card-title">Skeleton Loaders</div>
-    </div>
-    <div class="demo-card-body">
 
-      <div class="demo-section">
-        <h3>Patient Card Skeleton</h3>
-        <div id="skeletonDemo">
-          <div class="v2-skeleton-patient-card">
-            <div class="v2-skeleton is-square"></div>
-            <div style="flex:1;">
-              <div class="v2-skeleton is-title"></div>
-              <div class="v2-skeleton is-line w-75"></div>
-              <div class="v2-skeleton is-line w-50"></div>
-              <div style="margin-top:12px; display:flex; gap:8px;">
-                <div class="v2-skeleton is-button" style="flex:1;"></div>
-                <div class="v2-skeleton is-button" style="width:40px;"></div>
+  <!-- ==================================================== -->
+  <!-- MODAL: PATIENT (เพิ่ม/แก้ไข)                            -->
+  <!-- ==================================================== -->
+  <div id="patientModal" class="modal-root hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-panel">
+      <div class="modal-header">
+        <h3 id="patientModalTitle" class="text-lg font-semibold">เพิ่มผู้มีภาวะพึ่งพิง</h3>
+        <button class="modal-close" data-close="patientModal">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+      </div>
+      <div class="modal-body space-y-3">
+        <input type="hidden" id="pId">
+
+        <!-- Photo -->
+        <div class="flex items-center gap-3">
+          <div class="relative">
+            <img id="pPhotoPreview" src="" class="w-20 h-20 rounded-2xl object-cover bg-slate-100 border-2 border-slate-200" alt="">
+            <div id="pPhotoPlaceholder" class="absolute inset-0 flex items-center justify-center text-slate-400">
+              <i data-lucide="user" class="w-8 h-8"></i>
+            </div>
+          </div>
+          <div class="flex-1">
+            <label class="btn-secondary cursor-pointer text-sm w-full justify-center">
+            <i data-lucide="camera" class="w-4 h-4"></i>
+            เลือกรูปภาพ
+            <input id="pPhotoInput" type="file" accept="image/*" class="hidden">
+          </label>
+            <p class="text-xs text-slate-500 mt-1 text-center">ไฟล์ JPG/PNG ขนาดไม่เกิน 5MB</p>
+          </div>
+        </div>
+
+        <div>
+          <label class="form-label">ลำดับ</label>
+          <input id="pRunningNo" class="input-field bg-slate-50" readonly placeholder="สร้างอัตโนมัติ">
+        </div>
+        <div>
+          <label class="form-label">เลขบัตรประชาชน 13 หลัก <span class="text-red-500">*</span></label>
+          <input id="pCid" class="input-field" maxlength="13" inputmode="numeric">
+        </div>
+        <div>
+          <label class="form-label">ชื่อ-สกุล <span class="text-red-500">*</span></label>
+          <input id="pFullname" class="input-field">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="relative">
+          <input id="pBirthdate" type="text" class="input-field pr-10" placeholder="วว/ดด/ปปปป (พ.ศ.)" readonly autocomplete="off">
+            <input id="pBirthdateISO" type="hidden">
+            <i data-lucide="calendar" class="w-5 h-5 absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+          </div>
+          <div>
+            <label class="form-label">เพศ</label>
+            <select id="pGender" class="input-field">
+            <option value="">- เลือก -</option>
+            <option value="ชาย">ชาย</option>
+            <option value="หญิง">หญิง</option>
+            <option value="อื่น ๆ">อื่น ๆ</option>
+          </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="form-label">บ้านเลขที่</label>
+            <input id="pHouseNo" class="input-field">
+          </div>
+          <div>
+            <label class="form-label">หมู่</label>
+            <input id="pMoo" class="input-field">
+          </div>
+        </div>
+        <div>
+          <label class="form-label">โรคประจำตัว</label>
+          <textarea id="pUd" rows="2" class="input-field"></textarea>
+        </div>
+        <div>
+          <label class="form-label">ผู้ดูแล</label>
+          <select id="pCaregiverId" class="input-field"><option value="">- ไม่ระบุ -</option></select>
+        </div>
+        <div>
+          <label class="form-label">เบอร์โทร</label>
+          <input id="pPhone" class="input-field" maxlength="10" inputmode="tel">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" data-close="patientModal">ยกเลิก</button>
+        <button id="btnSavePatient" class="btn-primary">
+        <i data-lucide="save" class="w-4 h-4"></i> บันทึก
+      </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ==================================================== -->
+  <!-- MODAL: ASSIGNMENT                                     -->
+  <!-- ==================================================== -->
+  <div id="assignmentModal" class="modal-root hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-panel max-w-md">
+      <div class="modal-header">
+        <h3 class="text-lg font-semibold">มอบหมายการดูแล</h3>
+        <button class="modal-close" data-close="assignmentModal">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+      </div>
+      <div class="modal-body space-y-3">
+        <div>
+          <label class="form-label">ผู้ดูแล <span class="text-red-500">*</span></label>
+          <select id="asCaregiverId" class="input-field"><option value="">- เลือกผู้ดูแล -</option></select>
+        </div>
+        <div>
+          <label class="form-label">ผู้มีภาวะพึ่งพิง <span class="text-red-500">*</span></label>
+          <select id="asPatientId" class="input-field"><option value="">- เลือกผู้ป่วย -</option></select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" data-close="assignmentModal">ยกเลิก</button>
+        <button id="btnSaveAssignment" class="btn-primary">
+        <i data-lucide="check" class="w-4 h-4"></i> มอบหมาย
+      </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ==================================================== -->
+  <!-- MODAL: PATIENT HISTORY                                -->
+  <!-- ==================================================== -->
+  <div id="historyModal" class="modal-root hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-panel max-w-2xl">
+      <div class="modal-header">
+        <h3 id="historyTitle" class="text-lg font-semibold">ประวัติการดูแล</h3>
+        <button class="modal-close" data-close="historyModal">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+      </div>
+      <div class="modal-body">
+        <div id="historyList" class="space-y-3"></div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- MODAL: CARE RECORD (Multi-step Form 8 ขั้นตอน) — สำคัญที่สุด -->
+  <!-- ============================================================ -->
+  <div id="careRecordModal" class="modal-root hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-panel max-w-3xl !p-0 flex flex-col">
+
+      <!-- ===== Header ===== -->
+      <div class="modal-header sticky top-0 bg-white z-10 px-5 py-4 border-b border-slate-100">
+        <div class="min-w-0 flex-1">
+          <h3 class="text-lg font-semibold text-slate-800">บันทึกการดูแล</h3>
+          <p class="text-sm text-brand-600 truncate flex items-center gap-1.5 mt-0.5">
+            <i data-lucide="user" class="w-4 h-4 flex-shrink-0"></i>
+            <span id="careHeaderPatient">-</span>
+          </p>
+        </div>
+        <button class="modal-close" data-close="careRecordModal">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+      </div>
+
+      <!-- ===== Progress Indicator ===== -->
+      <div class="px-5 py-3 bg-gradient-to-r from-brand-50 to-sky-50 border-b border-slate-100">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-medium text-brand-700">
+          ขั้นตอนที่ <span id="currentStepText">1</span> จาก 8
+          </span>
+          <span id="currentStepName" class="text-xs font-semibold text-brand-700">ประเมินสุขภาพแรกรับ</span>
+        </div>
+        <div class="h-2 bg-white rounded-full overflow-hidden shadow-inner">
+          <div id="progressBar" class="h-full bg-gradient-to-r from-brand-500 to-brand-600 transition-all duration-300"
+            style="width:12.5%"></div>
+        </div>
+        <!-- Step Dots -->
+        <div class="flex items-center justify-between mt-3 px-1">
+          <div data-dot="1" class="step-dot dot-active">1</div>
+          <div data-dot="2" class="step-dot">2</div>
+          <div data-dot="3" class="step-dot">3</div>
+          <div data-dot="4" class="step-dot">4</div>
+          <div data-dot="5" class="step-dot">5</div>
+          <div data-dot="6" class="step-dot">6</div>
+          <div data-dot="7" class="step-dot">7</div>
+          <div data-dot="8" class="step-dot">8</div>
+        </div>
+      </div>
+
+      <!-- ===== Hidden State ===== -->
+      <input type="hidden" id="currentStep" value="1">
+      <input type="hidden" id="selectedPatientId">
+      <input type="hidden" id="selectedCaregiverId">
+
+      <!-- ===== Step Container ===== -->
+      <div class="modal-body flex-1 overflow-y-auto px-5 py-5">
+
+        <!-- ============== STEP 1 ============== -->
+        <div id="careStep1" class="care-step">
+          <h4 class="step-title">
+            <span class="step-num">1</span>
+            ข้อมูลผู้รับบริการและการประเมินสุขภาพแรกรับ
+          </h4>
+
+          <!-- Patient Info (readonly) -->
+          <div class="bg-slate-50 rounded-2xl p-4 mb-4">
+            <div class="flex items-start gap-3">
+              <img id="step1Photo" class="w-16 h-16 rounded-2xl object-cover bg-white border" src="" alt="">
+              <div class="min-w-0 flex-1 space-y-1 text-sm">
+                <p class="font-semibold text-slate-800" id="step1Fullname">-</p>
+                <p class="text-slate-600">
+                  <span id="step1Age">-</span> · <span id="step1Gender">-</span>
+                </p>
+                <p class="text-slate-600">บ้านเลขที่ <span id="step1HouseNo">-</span> หมู่ <span id="step1Moo">-</span>
+                </p>
+                <p class="text-slate-600">ผู้ดูแล: <span id="step1Caregiver">-</span></p>
               </div>
             </div>
           </div>
-          <div class="v2-skeleton-patient-card">
-            <div class="v2-skeleton is-square"></div>
-            <div style="flex:1;">
-              <div class="v2-skeleton is-title"></div>
-              <div class="v2-skeleton is-line w-75"></div>
-              <div class="v2-skeleton is-line w-50"></div>
+
+          <!-- BMI -->
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="form-label">น้ำหนัก (kg)</label>
+              <input id="crWeight" type="number" step="0.1" inputmode="decimal" class="input-field" placeholder="0.0">
+            </div>
+            <div>
+              <label class="form-label">ส่วนสูง (cm)</label>
+              <input id="crHeight" type="number" step="0.1" inputmode="decimal" class="input-field" placeholder="0.0">
+            </div>
+            <div>
+              <label class="form-label">BMI</label>
+              <input id="crBmi" class="input-field bg-slate-50" readonly placeholder="-">
+            </div>
+            <div>
+              <label class="form-label">แปลผล BMI</label>
+              <input id="crBmiResult" class="input-field bg-slate-50" readonly placeholder="-">
             </div>
           </div>
         </div>
-        <button class="v2-btn v2-btn-primary" style="margin-top:8px; width:100%;" onclick="reloadSkeleton()">
-          <i data-lucide="refresh-cw"></i> โหลดอีกครั้ง
-        </button>
-      </div>
 
-    </div>
-  </div>
+        <!-- ============== STEP 2 ============== -->
+        <div id="careStep2" class="care-step hidden">
+          <h4 class="step-title">
+            <span class="step-num">2</span>
+            สัญญาณชีพ
+          </h4>
 
-  <!-- Card 4: Celebration -->
-  <div class="demo-card">
-    <div class="demo-card-header">
-      <i data-lucide="party-popper"></i>
-      <div class="demo-card-title">Success Celebration</div>
-    </div>
-    <div class="demo-card-body">
-
-      <div class="demo-section">
-        <h3>เมื่อบันทึกสำเร็จ</h3>
-        <p style="font-size:13px; color: var(--v2-ink-500); margin-bottom: 12px;">
-          ใช้แทน SweetAlert "บันทึกสำเร็จ" เดิม — รู้สึก premium กว่า
-        </p>
-        <button class="v2-btn v2-btn-success" style="width:100%; padding:14px;" onclick="showCelebration()">
-          <i data-lucide="check-circle-2"></i> บันทึกการดูแล
-        </button>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- Card 5: Stagger -->
-  <div class="demo-card">
-    <div class="demo-card-header">
-      <i data-lucide="list-ordered"></i>
-      <div class="demo-card-title">Staggered List Entrance</div>
-    </div>
-    <div class="demo-card-body">
-
-      <div class="demo-section">
-        <h3>List items ปรากฏทีละตัว</h3>
-        <div id="staggerList" class="v2-stagger">
-          <div class="demo-stagger-item">
-            <i data-lucide="user" style="color: var(--v2-primary-600);"></i>
-            นางอำพร แก่ใจดี
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="form-label">อุณหภูมิ (°C)</label>
+              <input id="crTemp" type="number" step="0.1" inputmode="decimal" class="input-field" placeholder="36.5">
+            </div>
+            <div>
+              <label class="form-label">ชีพจร (ครั้ง/นาที)</label>
+              <input id="crPulse" type="number" inputmode="numeric" class="input-field" placeholder="80">
+            </div>
+            <div>
+              <label class="form-label">การหายใจ (ครั้ง/นาที)</label>
+              <input id="crResp" type="number" inputmode="numeric" class="input-field" placeholder="20">
+            </div>
           </div>
-          <div class="demo-stagger-item">
-            <i data-lucide="user" style="color: var(--v2-primary-600);"></i>
-            นายสมพร ดีใจ
-          </div>
-          <div class="demo-stagger-item">
-            <i data-lucide="user" style="color: var(--v2-primary-600);"></i>
-            นางมาลี เพื่อนใจ
-          </div>
-          <div class="demo-stagger-item">
-            <i data-lucide="user" style="color: var(--v2-primary-600);"></i>
-            นายสมบูรณ์ ใจดี
-          </div>
-          <div class="demo-stagger-item">
-            <i data-lucide="user" style="color: var(--v2-primary-600);"></i>
-            นางประไพ บานเย็น
-          </div>
-        </div>
-        <button class="v2-btn v2-btn-ghost" style="width:100%; margin-top:8px;" onclick="replayStagger()">
-          <i data-lucide="play"></i> เล่นใหม่
-        </button>
-      </div>
 
-    </div>
-  </div>
-
-  <!-- Card 6: Number Animation -->
-  <div class="demo-card">
-    <div class="demo-card-header">
-      <i data-lucide="trending-up"></i>
-      <div class="demo-card-title">Number Count-up</div>
-    </div>
-    <div class="demo-card-body">
-
-      <div class="demo-section">
-        <h3>Stats animation</h3>
-        <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
-          <div class="demo-stat">
-            <div class="demo-stat-value" id="stat1">0</div>
-            <div class="demo-stat-label">ผู้ป่วยทั้งหมด</div>
-          </div>
-          <div class="demo-stat">
-            <div class="demo-stat-value" id="stat2">0</div>
-            <div class="demo-stat-label">บันทึกวันนี้</div>
-          </div>
-        </div>
-        <button class="v2-btn v2-btn-primary" style="margin-top: 12px; width:100%;" onclick="animateStats()">
-          <i data-lucide="play"></i> เริ่ม Animation
-        </button>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- Card 7: Toggle + Focus -->
-  <div class="demo-card">
-    <div class="demo-card-header">
-      <i data-lucide="toggle-right"></i>
-      <div class="demo-card-title">Toggle + Focus Pulse</div>
-    </div>
-    <div class="demo-card-body">
-
-      <div class="demo-section">
-        <h3>Toggle (bouncy)</h3>
-        <div style="display:flex; gap:16px; align-items:center;">
-          <label class="v2-toggle-switch">
-            <input type="checkbox">
-            <span class="v2-toggle-slider"></span>
+          <!-- Toggle -->
+          <div class="mt-4 p-4 rounded-2xl bg-slate-50 flex items-center justify-between">
+            <div>
+              <p class="font-medium text-slate-800">บันทึกความดันโลหิต</p>
+              <p class="text-xs text-slate-500">เปิดเพื่อกรอกค่า Systolic / Diastolic</p>
+            </div>
+            <label class="toggle-switch">
+            <input id="crBpEnabled" type="checkbox">
+            <span class="toggle-slider"></span>
           </label>
-          <label class="v2-toggle-switch">
-            <input type="checkbox" checked>
-            <span class="v2-toggle-slider"></span>
-          </label>
-          <span style="color: var(--v2-ink-500); font-size: 13px;">← คลิกดู spring animation</span>
-        </div>
-      </div>
-
-      <div class="demo-section">
-        <h3>Input Focus Pulse</h3>
-        <input class="v2-input" placeholder="คลิกเพื่อ focus ดู ripple">
-      </div>
-
-    </div>
-  </div>
-
-  <!-- Card 8: Progress + Empty -->
-  <div class="demo-card">
-    <div class="demo-card-header">
-      <i data-lucide="bar-chart-3"></i>
-      <div class="demo-card-title">Progress + Empty State</div>
-    </div>
-    <div class="demo-card-body">
-
-      <div class="demo-section">
-        <h3>Progress with Shine</h3>
-        <p style="font-size: 12px; color: var(--v2-ink-500); margin-bottom: 4px;">ขั้นตอนที่ 3 จาก 8</p>
-        <div class="demo-progress-row">
-          <div class="done"></div>
-          <div class="done"></div>
-          <div class="demo-step-dot"></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-        </div>
-      </div>
-
-      <div class="demo-section">
-        <h3>Empty State (Floating)</h3>
-        <div class="empty-demo">
-          <div class="empty-illustration">
-            <i data-lucide="search-x"></i>
           </div>
-          <div class="empty-title">ไม่พบข้อมูล</div>
+
+          <div id="bpFields" class="hidden grid grid-cols-2 gap-3 mt-3">
+            <div>
+              <label class="form-label">Systolic (mmHg)</label>
+              <input id="crBpSys" type="number" inputmode="numeric" class="input-field" placeholder="120">
+            </div>
+            <div>
+              <label class="form-label">Diastolic (mmHg)</label>
+              <input id="crBpDia" type="number" inputmode="numeric" class="input-field" placeholder="80">
+            </div>
+          </div>
+        </div>
+
+        <!-- ============== STEP 3: สุขภาพจิต ============== -->
+        <div id="careStep3" class="care-step hidden">
+          <h4 class="step-title">
+            <span class="step-num">3</span>
+            การประเมินสุขภาพจิต
+          </h4>
+        
+          <!-- ⭐ Master Toggle: เปิด/ปิดการประเมินทั้งหมด -->
+          <div class="mh-master-toggle">
+            <div class="w-9 h-9 rounded-lg bg-brand-100 text-brand-600 flex items-center justify-center flex-shrink-0">
+              <i data-lucide="brain" class="w-5 h-5"></i>
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="font-semibold text-slate-800 text-sm">ประเมินสุขภาพจิต</p>
+              <p class="text-xs text-slate-500" id="mhToggleHint">2Q / 9Q / 8Q</p>
+            </div>
+            <label class="toggle-switch flex-shrink-0">
+              <input id="mhEnabled" type="checkbox">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        
+          <!-- Container ของแบบประเมินทั้งหมด - ซ่อนเมื่อ Toggle ปิด -->
+          <div id="mhAssessmentBlock" class="hidden">
+        
+            <!-- ============ 2Q ============ -->
+            <div class="card-section">
+              <div class="flex items-center gap-2 mb-2">
+                <div class="w-8 h-8 rounded-lg bg-brand-100 text-brand-600 flex items-center justify-center text-sm font-semibold">2Q</div>
+                <p class="font-semibold text-slate-800">คัดกรองโรคซึมเศร้า</p>
+              </div>
+              <p class="text-xs text-slate-500 mb-3">2 คำถามคัดกรองภาวะซึมเศร้าเบื้องต้น</p>
+              <div class="space-y-2" id="q2List"></div>
+              <div id="q2Result" class="hidden mt-3 p-3 rounded-xl text-sm font-medium text-center"></div>
+            </div>
+        
+            <!-- ============ 9Q ============ -->
+            <div id="block9Q" class="card-section hidden">
+              <div class="flex items-center gap-2 mb-2">
+                <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center text-sm font-semibold">9Q</div>
+                <p class="font-semibold text-slate-800">แบบประเมินโรคซึมเศร้า</p>
+              </div>
+              <p class="text-xs text-slate-500 mb-3">ในช่วง 2 สัปดาห์ที่ผ่านมารวมทั้งวันนี้ ท่านมีอาการเหล่านี้บ่อยแค่ไหน</p>
+              <div class="grid grid-cols-4 gap-1 mb-3 text-[10px] text-center text-slate-600">
+                <div class="px-1 py-1.5 rounded bg-slate-100">ไม่มีเลย<br><b>0</b></div>
+                <div class="px-1 py-1.5 rounded bg-blue-50">เป็นบางวัน<br><b>1</b></div>
+                <div class="px-1 py-1.5 rounded bg-amber-50">เป็นบ่อย<br><b>2</b></div>
+                <div class="px-1 py-1.5 rounded bg-red-50">เป็นทุกวัน<br><b>3</b></div>
+              </div>
+              <div class="space-y-2" id="q9List"></div>
+              <div id="q9Result" class="hidden mt-3 p-3 rounded-xl text-sm text-center">
+                <p class="text-xs text-slate-500 mb-1">คะแนนรวม</p>
+                <p class="text-2xl font-bold mb-1"><span id="q9TotalScore">0</span> / 27</p>
+                <p id="q9ResultText" class="font-medium"></p>
+              </div>
+            </div>
+        
+            <!-- ============ 8Q ============ -->
+            <div id="block8Q" class="card-section hidden">
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center text-sm font-semibold">8Q</div>
+                  <p class="font-semibold text-slate-800">ประเมินการฆ่าตัวตาย</p>
+                </div>
+                <span id="cr8qBadge" class="hidden px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-700 font-medium">
+                  ⚠ เสี่ยงสูง
+                </span>
+              </div>
+              <p class="text-xs text-slate-500 mb-3">ในช่วง 1 เดือนที่ผ่านมารวมวันนี้</p>
+              <div class="space-y-2" id="q8List"></div>
+              <div id="q8Result" class="hidden mt-3 p-3 rounded-xl text-sm text-center">
+                <p class="text-xs text-slate-500 mb-1">คะแนนรวม</p>
+                <p class="text-2xl font-bold mb-1"><span id="q8TotalScore">0</span></p>
+                <p id="q8ResultText" class="font-medium"></p>
+              </div>
+            </div>
+        
+          </div>
+        
+          <!-- ข้อความเมื่อปิด Toggle -->
+          <div id="mhSkippedNotice" class="text-center py-8 text-slate-400">
+            <i data-lucide="circle-off" class="w-12 h-12 mx-auto mb-2 opacity-50"></i>
+            <p class="text-sm">ข้ามการประเมินสุขภาพจิตในครั้งนี้</p>
+            <p class="text-xs mt-1">เปิด Toggle ด้านบนเพื่อทำแบบประเมิน</p>
+          </div>
+        </div>  
+        <!-- ============== STEP 4 ============== -->
+        <div id="careStep4" class="care-step hidden">
+          <h4 class="step-title">
+            <span class="step-num">4</span>
+            กิจกรรมการช่วยเหลือประจำวัน (ADL)
+          </h4>
+          <p class="text-sm text-slate-500 mb-3">เลือกได้หลายรายการ</p>
+          <div id="step4List" class="space-y-2">
+            <!-- Generated by JS -->
+          </div>
+        </div>
+
+        <!-- ============== STEP 5 ============== -->
+        <div id="careStep5" class="care-step hidden">
+          <h4 class="step-title">
+            <span class="step-num">5</span>
+            กิจกรรมการดูแลด้านสุขภาพพื้นฐาน
+          </h4>
+          <p class="text-sm text-slate-500 mb-3">เลือกได้หลายรายการ</p>
+          <div id="step5List" class="space-y-2"></div>
+        </div>
+
+        <!-- ============== STEP 6 ============== -->
+        <div id="careStep6" class="care-step hidden">
+          <h4 class="step-title">
+            <span class="step-num">6</span>
+            กิจกรรมการดูแลด้านอื่น ๆ
+          </h4>
+          <p class="text-sm text-slate-500 mb-3">เลือกได้หลายรายการ</p>
+          <div id="step6List" class="space-y-2"></div>
+        </div>
+
+        <!-- ============== STEP 7 ============== -->
+        <div id="careStep7" class="care-step hidden">
+          <h4 class="step-title">
+            <span class="step-num">7</span>
+            อัปโหลดภาพและลายเซ็นดิจิทัล
+          </h4>
+
+          <!-- 7.1 Older Image -->
+          <div class="card-section">
+            <p class="font-medium mb-2">7.1 ภาพผู้มีภาวะพึ่งพิง
+              <span class="text-xs text-slate-500 font-normal">(1 ภาพ)</span></p>
+            <div class="flex items-center gap-3">
+              <div class="relative w-24 h-24 flex-shrink-0">
+                <img id="olderPreview" src="" class="w-full h-full rounded-2xl object-cover bg-slate-100 border-2 border-dashed border-slate-300 hidden" alt="">
+                <div id="olderPlaceholder"
+                  class="absolute inset-0 flex items-center justify-center bg-slate-100 rounded-2xl text-slate-400 border-2 border-dashed border-slate-300">
+                  <i data-lucide="image" class="w-8 h-8"></i>
+                </div>
+              </div>
+              <label class="btn-secondary cursor-pointer text-sm">
+              <i data-lucide="upload" class="w-4 h-4"></i> เลือกรูป
+              <input id="olderFile" type="file" accept="image/*" capture="environment" class="hidden">
+            </label>
+            </div>
+          </div>
+
+          <!-- 7.2 Service Images -->
+          <div class="card-section">
+            <div class="flex items-center justify-between mb-2">
+              <p class="font-medium">7.2 ภาพกิจกรรมการดูแล</p>
+              <span class="text-xs text-slate-500">ขั้นต่ำ 3 ภาพ <span id="serviceCount" class="font-semibold text-brand-600">(0)</span></span>
+            </div>
+            <label class="btn-secondary cursor-pointer text-sm w-full justify-center mb-3">
+            <i data-lucide="camera" class="w-4 h-4"></i> เพิ่มภาพกิจกรรม
+            <input id="serviceFiles" type="file" accept="image/*" capture="environment" multiple class="hidden">
+          </label>
+            <div id="serviceGrid" class="grid grid-cols-3 gap-2"></div>
+          </div>
+
+          <!-- 7.3 Signature -->
+          <div class="card-section">
+            <p class="font-medium mb-2">7.3 ลายเซ็นดิจิทัล <span class="text-red-500">*</span></p>
+            <div class="border-2 border-dashed border-slate-300 rounded-2xl bg-white p-2">
+              <canvas id="sigCanvas" class="w-full bg-white touch-none rounded-xl" height="180"></canvas>
+            </div>
+            <div class="flex items-center justify-between mt-2">
+              <p class="text-xs text-slate-500">ใช้นิ้วลากเพื่อลงลายเซ็น</p>
+              <button id="btnClearSig" type="button" class="text-sm text-red-600 hover:text-red-700 flex items-center gap-1">
+              <i data-lucide="eraser" class="w-4 h-4"></i> ล้างลายเซ็น
+            </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============== STEP 8 ============== -->
+        <div id="careStep8" class="care-step hidden">
+          <h4 class="step-title">
+            <span class="step-num">8</span>
+            ตรวจสอบข้อมูลก่อนบันทึก
+          </h4>
+
+          <!-- Summary -->
+          <div class="space-y-3" id="reviewContent">
+            <div class="card-section">
+              <p class="text-xs text-slate-500">ผู้รับบริการ</p>
+              <p id="rvPatient" class="font-semibold text-slate-800">-</p>
+              <p class="text-xs text-slate-500 mt-2">วันที่บันทึก</p>
+              <p id="rvDate" class="font-medium text-slate-700">-</p>
+            </div>
+
+            <div class="card-section">
+              <p class="font-medium mb-2 text-brand-700">ประเมินสุขภาพแรกรับ</p>
+              <div class="grid grid-cols-2 gap-2 text-sm">
+                <div><span class="text-slate-500">น้ำหนัก:</span> <span id="rvWeight">-</span> kg</div>
+                <div><span class="text-slate-500">ส่วนสูง:</span> <span id="rvHeight">-</span> cm</div>
+                <div><span class="text-slate-500">BMI:</span> <span id="rvBmi">-</span></div>
+                <div><span class="text-slate-500">แปลผล:</span> <span id="rvBmiResult">-</span></div>
+              </div>
+            </div>
+
+            <div class="card-section">
+              <p class="font-medium mb-2 text-brand-700">สัญญาณชีพ</p>
+              <div class="grid grid-cols-2 gap-2 text-sm">
+                <div><span class="text-slate-500">อุณหภูมิ:</span> <span id="rvTemp">-</span> °C</div>
+                <div><span class="text-slate-500">ชีพจร:</span> <span id="rvPulse">-</span> /min</div>
+                <div><span class="text-slate-500">หายใจ:</span> <span id="rvResp">-</span> /min</div>
+                <div><span class="text-slate-500">ความดัน:</span> <span id="rvBp">-</span></div>
+              </div>
+            </div>
+
+            <div class="card-section">
+              <p class="font-medium mb-2 text-brand-700">สุขภาพจิต</p>
+              <div class="grid grid-cols-3 gap-2 text-sm">
+                <div><span class="text-slate-500">2Q:</span> <span id="rv2q">-</span></div>
+                <div><span class="text-slate-500">9Q:</span> <span id="rv9q">-</span></div>
+                <div><span class="text-slate-500">8Q:</span> <span id="rv8q">-</span></div>
+              </div>
+            </div>
+
+            <div class="card-section">
+              <p class="font-medium mb-2 text-brand-700">กิจกรรมการดูแลที่เลือก</p>
+              <div id="rvActivities" class="text-sm text-slate-700 space-y-2"></div>
+            </div>
+
+            <div class="card-section">
+              <p class="font-medium mb-2 text-brand-700">ภาพและลายเซ็น</p>
+              <div class="text-sm text-slate-600 mb-2">
+                ภาพกิจกรรม: <span id="rvServiceCount" class="font-semibold text-brand-600">0</span> ภาพ
+              </div>
+              <div id="rvServicePreview" class="grid grid-cols-3 gap-2 mb-3"></div>
+              <p class="text-xs text-slate-500 mb-1">ลายเซ็น</p>
+              <img id="rvSig" src="" class="h-20 bg-white border rounded-lg" alt="">
+            </div>
+
+            <div class="card-section">
+              <label class="form-label">หมายเหตุเพิ่มเติม (ไม่บังคับ)</label>
+              <textarea id="crNote" rows="3" class="input-field" placeholder="พิมพ์หมายเหตุ..."></textarea>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ===== Navigation Buttons (Sticky Bottom) ===== -->
+      <div class="border-t border-slate-100 px-5 py-3 bg-white sticky bottom-0">
+        <div class="flex items-center gap-2">
+          <button id="prevStepBtn" type="button" class="btn-secondary flex-1 hidden">
+          <i data-lucide="chevron-left" class="w-4 h-4"></i> ย้อนกลับ
+        </button>
+          <button id="nextStepBtn" type="button" class="btn-primary flex-1">
+          ถัดไป <i data-lucide="chevron-right" class="w-4 h-4"></i>
+        </button>
+          <button id="submitCareRecordBtn" type="button" class="btn-primary flex-1 hidden bg-emerald-600 hover:bg-emerald-700">
+          <i data-lucide="check-circle" class="w-4 h-4"></i> บันทึกข้อมูล
+        </button>
         </div>
       </div>
 
     </div>
   </div>
 
-</div>
 
-<script>
-// ==== Ripple effect ====
-document.addEventListener('click', (e) => {
-  const btn = e.target.closest('.v2-btn');
-  if (!btn) return;
+  <!-- ==================================================== -->
+  <!-- IMAGE VIEWER MODAL                                    -->
+  <!-- ==================================================== -->
+  <div id="imageViewer" class="fixed inset-0 z-[9000] hidden bg-black/90 items-center justify-center p-4">
+    <button id="closeViewer" class="absolute top-4 right-4 text-white p-2">
+    <i data-lucide="x" class="w-7 h-7"></i>
+  </button>
+    <img id="viewerImg" src="" class="max-w-full max-h-full rounded-lg" alt="">
+  </div>
 
-  const ripple = document.createElement('span');
-  ripple.className = 'v2-ripple';
-  const rect = btn.getBoundingClientRect();
-  const size = Math.max(rect.width, rect.height);
-  const x = e.clientX - rect.left - size / 2;
-  const y = e.clientY - rect.top - size / 2;
-  ripple.style.width = ripple.style.height = size + 'px';
-  ripple.style.left = x + 'px';
-  ripple.style.top = y + 'px';
 
-  // Ghost button: use blue ripple
-  if (btn.classList.contains('v2-btn-ghost')) {
-    ripple.style.background = 'rgba(2, 132, 199, 0.2)';
-  }
+  <!-- ===== Scripts ===== -->
+ <script src="./js/config.js"></script>
+ <script src="./js/app.js"></script>
 
-  btn.appendChild(ripple);
-  setTimeout(() => ripple.remove(), 600);
-});
-
-// ==== Toast ====
-let toastEl;
-function showToast(type, message) {
-  if (!toastEl) {
-    toastEl = document.createElement('div');
-    toastEl.className = 'v2-toast';
-    document.body.appendChild(toastEl);
-  }
-  const icons = { success: 'check-circle-2', error: 'x-circle', warning: 'alert-triangle', info: 'info' };
-  toastEl.className = `v2-toast is-${type}`;
-  toastEl.innerHTML = `
-    <div class="v2-toast-icon">
-      <i data-lucide="${icons[type]}"></i>
-    </div>
-    <div class="v2-toast-text">${message}</div>
-  `;
-  lucide.createIcons();
-  requestAnimationFrame(() => toastEl.classList.add('is-visible'));
-  clearTimeout(window._toastTimer);
-  window._toastTimer = setTimeout(() => toastEl.classList.remove('is-visible'), 2800);
-}
-
-// ==== Celebration ====
-let celebEl;
-function showCelebration() {
-  if (!celebEl) {
-    celebEl = document.createElement('div');
-    celebEl.className = 'v2-celebration-overlay';
-    celebEl.innerHTML = `
-      <div class="v2-celebration-card">
-        <div class="v2-celebration-icon">
-          <i data-lucide="check"></i>
-        </div>
-        <div class="v2-celebration-title">บันทึกสำเร็จ!</div>
-        <div class="v2-celebration-message">ขอบคุณสำหรับการดูแล<br>ผู้ป่วยจะได้รับการดูแลที่ดีที่สุด</div>
-      </div>
-    `;
-    document.body.appendChild(celebEl);
-    lucide.createIcons();
-  }
-  requestAnimationFrame(() => celebEl.classList.add('is-visible'));
-  setTimeout(() => celebEl.classList.remove('is-visible'), 2200);
-}
-
-// ==== Reload skeleton ====
-function reloadSkeleton() {
-  const wrap = document.getElementById('skeletonDemo');
-  wrap.style.opacity = '0';
-  setTimeout(() => {
-    wrap.style.opacity = '1';
-    wrap.style.transition = 'opacity 0.3s';
-  }, 50);
-}
-
-// ==== Replay stagger ====
-function replayStagger() {
-  const list = document.getElementById('staggerList');
-  list.classList.remove('v2-stagger');
-  void list.offsetWidth;
-  list.classList.add('v2-stagger');
-}
-
-// ==== Number animation ====
-function animateNumber(el, target, duration = 1200) {
-  const start = parseInt(el.textContent.replace(/[^\d-]/g, ''), 10) || 0;
-  const change = target - start;
-  const startTime = performance.now();
-
-  function update(now) {
-    const elapsed = now - startTime;
-    const progress = Math.min(elapsed / duration, 1);
-    const eased = 1 - Math.pow(1 - progress, 3);
-    el.textContent = Math.round(start + change * eased);
-
-    if (progress < 1) {
-      requestAnimationFrame(update);
-    } else {
-      el.classList.add('is-updating');
-      setTimeout(() => el.classList.remove('is-updating'), 400);
-    }
-  }
-  requestAnimationFrame(update);
-}
-
-function animateStats() {
-  // Reset
-  document.getElementById('stat1').textContent = '0';
-  document.getElementById('stat2').textContent = '0';
-
-  setTimeout(() => {
-    animateNumber(document.getElementById('stat1'), 24);
-    setTimeout(() => animateNumber(document.getElementById('stat2'), 18), 200);
-  }, 100);
-}
-
-// Initial animation
-setTimeout(animateStats, 500);
-
-// Init icons
-lucide.createIcons();
-</script>
-
+  <script>
+    // เริ่มต้น Lucide Icons หลัง DOM พร้อม
+    document.addEventListener('DOMContentLoaded', function() {
+      if (window.lucide) lucide.createIcons();
+    });
+  </script>
 </body>
+
 </html>
